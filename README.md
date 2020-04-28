@@ -17,7 +17,7 @@ Installation
 4.	Sweep Nmin, Dmax, Order, L, E (James F working on this, already has ideas outline, will be mainly XML)\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1.	Output graph (Dmax vs Nmin vs cluster count etc.) \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2.	Output cluster composition, sizes, number\ 
-5.	Random mass re-labeller (that is actually random!) \
+5.	Random mass re-labeller (that is actually random!) (Peter is working on this) \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1.	Compare results to this randomised set \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2.	Perform statistical tests \
 6.	Analyse multiple .pos files at once to generate matrix/cluster files (batch analysis)\
