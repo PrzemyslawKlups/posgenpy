@@ -11,7 +11,9 @@ Installation
 
 ## To do
 
-To do
+XML file generator
+Posfile reader
+Range file reader
 1.	Sweep Nmin, Dmax, Order, L, E\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.1.	Output graph (Dmax vs Nmin vs cluster count etc.)\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.2.	Output cluster composition, sizes, number\
