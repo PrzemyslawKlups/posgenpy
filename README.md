@@ -20,7 +20,7 @@ Installation
 5.	Random mass re-labeller (that is actually random!) (Peter is working on this) \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1.	Compare results to this randomised set \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2.	Perform statistical tests \
-6.	Analyse multiple .pos files at once to generate matrix/cluster files (batch analysis)\
+6.	Analyse multiple .pos files at once to generate matrix/cluster files (batch analysis)\ (Hazel working on this)
 7.	Run simulation to check output of cluster search: \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.1.	Grab composition from existing file or provide one \
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.2.	For a given box and number of cluster density (could be estimated from existing data), generate a random distribution of clusters of specific size distribution. This gives a “ground truth” which any subsequent searches can be checked against \
