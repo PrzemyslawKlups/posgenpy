@@ -11,35 +11,34 @@ Installation
 
 ## To do
 
-XML file generator
-Posfile reader
-Range file reader
-1.	Sweep Nmin, Dmax, Order, L, E\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.1.	Output graph (Dmax vs Nmin vs cluster count etc.)\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.2.	Output cluster composition, sizes, number\
-2.	Random mass re-labeller (that is actually random!)\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.1.	Compare results to this randomised set\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2.	Perform statistical tests\
-3.	Analyse multiple .pos files at once to generate matrix/cluster files (batch analysis)\
-4.	Run simulation to check output of cluster search:\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1.	Grab composition from existing file or provide one\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2.	For a given box and number of cluster density (could be estimated from existing data), generate a random distribution of clusters of specific size distribution. This gives a “ground truth” which any subsequent searches can be checked against\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.	Run clustering on the simulated data and compare against true values:\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1.	Where are the clusters detected?\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2.	Were the right number detected?\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3.	Did they have the correct composition?\ 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.4.	Were the ions classified correctly, TT/TF/FT/FF truth table?\
-5.	Reading cluster stats files\
-6.	Assist in easier use of posgen (e.g. adding bulk ions from range file)\
-7.	Nearest neighbour plot of cluster centres to minimise artificial joining/ splitting up of clusters\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.1.	Tool which can allow you to separate joined clusters\
-8.	Edge cluster identification and removal from composition/size calculations\
-9.	Morphology plots\
-10.	Local concentration filtering\
-11.	Other statistical tests, such as:\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;11.1.	Is cluster composition uniform?\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;11.2.	Is the composition of a species in a cluster significantly above matrix level?\
-
+1.	Pos file reader (completed by Charlie)\
+2.	Range file reader (will specify all core and bulk ions now and come back to this)\
+3.	XML generator (Andy and James F, Andy to generalise)\
+4.	Sweep Nmin, Dmax, Order, L, E (James F working on this, already has ideas outline, will be mainly XML)\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1.	Output graph (Dmax vs Nmin vs cluster count etc.) \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2.	Output cluster composition, sizes, number\ 
+5.	Random mass re-labeller (that is actually random!) \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.1.	Compare results to this randomised set \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5.2.	Perform statistical tests \
+6.	Analyse multiple .pos files at once to generate matrix/cluster files (batch analysis)\
+7.	Run simulation to check output of cluster search: \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.1.	Grab composition from existing file or provide one \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.2.	For a given box and number of cluster density (could be estimated from existing data), generate a random distribution of clusters of specific size distribution. This gives a “ground truth” which any subsequent searches can be checked against \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.3.	Run clustering on the simulated data and compare against true values:\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.3.1.	Where are the clusters detected? \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.3.2.	Were the right number detected? \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.3.3.	Did they have the correct composition? \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.4.	Were the ions classified correctly, TT/TF/FT/FF truth table?\
+8.	Reading cluster stats files\
+9.	Assist in easier use of posgen (e.g. adding bulk ions from range file) \
+10.	Nearest neighbour plot of cluster centres to minimise artificial joining/ splitting up of clusters \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10.1.	Tool which can allow you to separate joined clusters\
+11.	Edge cluster identification and removal from composition/size calculations \
+12.	Morphology plots \
+13.	Local concentration filtering \
+14.	Other statistical tests, such as: \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;14.1.	Is cluster composition uniform? \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;14.2.	Is the composition of a species in a cluster significantly above matrix level?\
 
 ## Overview
 General description of different functions.
