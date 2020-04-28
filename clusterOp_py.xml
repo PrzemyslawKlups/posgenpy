@@ -1,0 +1,42 @@
+<!DOCTYPE posscript SYSTEM "posscript.dtd">
+<posscript>
+  <version/>
+  <fcc>
+    <bound x="8" y="8" z="8"/>
+    <spacing>
+      <A value="0.405"/>
+    </spacing>
+    <atom index="(000)" mass="1"/>
+    <atom index="(202)" mass="1"/>
+    <atom index="(220)" mass="1"/>
+    <atom index="(022)" mass="1"/>
+  </fcc>
+  <randreplace frac="0.05" mass="2"/>
+  <cluster>
+    <algorithm value="maxsep">
+      <dclassify value="0.0" knn="1"/>
+      <dmax value="0.5"/>
+      <dbulk value="0.2"/>
+      <derode value="0.2"/>
+    </algorithm>
+    <range file="AB.rng"/>
+    <core>
+      <typelist>
+        <atomtype symbol="B"/>
+      </typelist>
+    </core>
+    <bulk>
+      <typelist>
+        <atomtype symbol="A"/>
+      </typelist>
+    </bulk>
+    <sizeclip nmin="5"/>
+    <unranged foroutput="true" forstats="true"/>
+    <clusterstats core="true" bulk="true" percluster="true" file="cluster-stats.txt"/>
+    <unclusterstats file="unclustered-stats.txt"/>
+    <sizedist file="sizedist.txt"/>
+    <clustered-pos file="cluster.pos" retain="true"/>
+    <unclustered-pos file="uncluster.pos" retain="true"/>
+    <clusterid file="clusterid.pos" offset="1.1"/>
+  </cluster>
+</posscript>
