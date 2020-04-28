@@ -1,7 +1,44 @@
 # posgenpy
 Python-based driver for cluster analysis using [posgen](http://apttools.sourceforge.net). These tools are to help make analysis by [posgen](http://apttools.sourceforge.net) easier.
 ## Installation 
-...
+Installation
+1.	Install Anaconda (https://www.anaconda.com/products/individual). This will give you access to Python, Jupyter notebooks and other useful packages.
+2.	Install posgen (https://sourceforge.net/projects/apttools/files/posgen/0.0.3/) 
+3.	Install GitHub Desktop (https://desktop.github.com/)
+4.	Clone the posgenpy repo from GitHub to your local computer so that it can be used in GitHub Desktop
+5.	Open Anaconda Navigator and then launch jupyter notebook
+6.	Within jupyter notebook, navigate to your GitHub folder and open ‘Posgen test.ipynb’
+
+## To do
+
+To do
+1.	Sweep Nmin, Dmax, Order, L, E\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.1.	Output graph (Dmax vs Nmin vs cluster count etc.)\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.2.	Output cluster composition, sizes, number\
+2.	Random mass re-labeller (that is actually random!)\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.1.	Compare results to this randomised set\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2.	Perform statistical tests\
+3.	Analyse multiple .pos files at once to generate matrix/cluster files (batch analysis)\
+4.	Run simulation to check output of cluster search:\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.1.	Grab composition from existing file or provide one\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.2.	For a given box and number of cluster density (could be estimated from existing data), generate a random distribution of clusters of specific size distribution. This gives a “ground truth” which any subsequent searches can be checked against\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.	Run clustering on the simulated data and compare against true values:\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.1.	Where are the clusters detected?\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.2.	Were the right number detected?\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.3.3.	Did they have the correct composition?\ 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.4.	Were the ions classified correctly, TT/TF/FT/FF truth table?\
+5.	Reading cluster stats files\
+6.	Assist in easier use of posgen (e.g. adding bulk ions from range file)\
+7.	Nearest neighbour plot of cluster centres to minimise artificial joining/ splitting up of clusters\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;7.1.	Tool which can allow you to separate joined clusters\
+8.	Edge cluster identification and removal from composition/size calculations\
+9.	Morphology plots\
+10.	Local concentration filtering\
+11.	Other statistical tests, such as:\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;11.1.	Is cluster composition uniform?\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;11.2.	Is the composition of a species in a cluster significantly above matrix level?\
+
+
 ## Overview
 General description of different functions.
 ## Terms
