@@ -8,6 +8,8 @@ Created on Mon Sep  2 15:51:20 2019
 # Open pos file - should be in shared folder
 import pandas as pd
 import struct
+import time
+
 start = time.time()
 def read_pos(f):
 
