@@ -1,3 +1,4 @@
+#TODO: Would be better to create a class object to contain the parameters required, this will help reduce code breakage if interfaces change.
 def writeClusterXML(xmlFileName, posFile, rangeFile, coreIons, bulkIons,
                           massRandomRelabel = False,
                           dclassify = "0.0", 
@@ -7,11 +8,11 @@ def writeClusterXML(xmlFileName, posFile, rangeFile, coreIons, bulkIons,
                           derode="0.2",
                           nmin="2",
                           nmax="-1",
-                          includeUnrangedPos="true",
-                          includeUnrangedStats="true",
-                          clusterstatsCore="true",
-                          clusterstatsBulk="true", 
-                          clusterstatsPercluster="true", 
+                          includeUnrangedPos=True,
+                          includeUnrangedStats=True,
+                          clusterstatsCore=True,
+                          clusterstatsBulk=True, 
+                          clusterstatsPercluster=True, 
                           clusterstatsFile="cluster-stats.txt",
                           unclusterstatsFile = "unclustered-stats.txt",
                           sizedistFile="sizedist.txt",
@@ -35,11 +36,6 @@ def writeClusterXML(xmlFileName, posFile, rangeFile, coreIons, bulkIons,
     Requires lxml to run. Returns the lxml.etree._ElementTree object used to write the xml file.
     
     """
-    
-    # Input error checking
-    # TODO: not complete!
-    if (includeUnrangedPos.lower() != "true" and includeUnrangedPos.lower() != "false"):
-        raise Exception('includeUnrangedPos should be "true" or "false", the value was: {}'.format(includeUnrangedPos))
     
     from lxml import etree
     
@@ -82,30 +78,30 @@ def writeClusterXML(xmlFileName, posFile, rangeFile, coreIons, bulkIons,
     cluster.append( etree.Element("sizeclip", nmin=nmin, nmax=nmax))
 
     # switch if unranged ions are required in either/both of the POS output or stats
-    if includeUnrangedPos == "true" or includeUnrangedStats == "true":
-            cluster.append( etree.Element("unranged", foroutput=includeUnrangedPos, forstats=includeUnrangedStats))
+    if includeUnrangedPos or includeUnrangedStats:
+            cluster.append( etree.Element("unranged", foroutput=str(includeUnrangedPos), forstats=str(includeUnrangedStats)))
     
     # cluster stats options        
-    if clusterstatsFile != "":
+    if clusterstatsFile:
         cluster.append( etree.Element("clusterstats", 
-                                      core=clusterstatsCore, 
-                                      bulk=clusterstatsBulk, 
-                                      percluster=clusterstatsPercluster, 
-                                      file=clusterstatsFile))
+                                      core=str(clusterstatsCore), 
+                                      bulk=str(clusterstatsBulk), 
+                                      percluster=str(clusterstatsPercluster), 
+                                      file=str(clusterstatsFile)))
     # not-clustered stats options  
-    if unclusterstatsFile != "":
+    if unclusterstatsFile:
         cluster.append( etree.Element("unclusterstats", file=unclusterstatsFile))
     
-    if sizedistFile != "":
+    if sizedistFile:
         cluster.append( etree.Element("sizedist", file=sizedistFile))
     
-    if clusteredPosFile != "":
+    if clusteredPosFile:
         cluster.append( etree.Element("clustered-pos", file=clusteredPosFile, retain="true"))
         
-    if unclusteredPosFile != "":
+    if unclusteredPosFile:
         cluster.append( etree.Element("unclustered-pos", file=unclusteredPosFile, retain="true"))
 
-    if clusterIDPosFile != "":
+    if clusterIDPosFile:
         cluster.append( etree.Element("clusterid", file=clusterIDPosFile, offset="1"))
 
     # pre-view with print
