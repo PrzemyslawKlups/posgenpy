@@ -14,7 +14,7 @@ Installation
 1. Investigate using Windows Subsytem for Linux to simplify install and facilitate compatibility with libatomprobe (Peter to look into this)\
 2.	Pos file reader (completed by Charlie)\
 3.	Range file reader (will specify all core and bulk ions for now and come back to this, may not need if we go with libatomprobe)\
-4.	XML generator (Andy and James F working on this, Andy to generalise)\
+4.	XML generator (Andy and James F working on this, **prototype working 29/4/20**)\
 5.	Sweep Nmin, Dmax, Order, L, E (James F working on this, already has ideas outline, will be mainly XML)\
 5.1.	Output graph (Dmax vs Nmin vs cluster count etc.) \
 5.2.	Output cluster composition, sizes, number\ 
@@ -46,7 +46,9 @@ Installation
 General description of different functions.
 ## Terms
 **posgen** - an XML driven C++ executable which can do lots of pos-operations including generating simulated data and cluster analysis
+
 **XML** - markup language for text file, posgen has its own specification for the structure of the file.
+
 **cluster stats file** - the file produced by posgen which has a summary of the cluster selection results. Has cluster centres, counts of each ion (molecules not decomposed) and radius of gyration for each cluster or averaged (choice in input XML file).
 ## Existing MATLAB scripts
 Some old MATLAB code (circa 2015) which was used by AJL previously have been uploaded, some are low level functions and others use these function to do high-level processing. There are some functions borrowed from [AtomProbeLab](http://AtomProbeLab.sourceforge.net) to let the existing functions run. These are stored in the `Matlab/` folder.
