@@ -11,39 +11,42 @@ Installation
 
 ## To do
 
-1. Investigate using Windows Subsytem for Linux to simplify install and facilitate compatibility with libatomprobe (Peter to look into this)\
-2.	Pos file reader (completed by Charlie)\
-3.	Range file reader (will specify all core and bulk ions for now and come back to this, may not need if we go with libatomprobe)\
-4.	XML generator (Andy and James F working on this, **prototype working 29/4/20**)\
-5.	Sweep Nmin, Dmax, Order, L, E (James F working on this, already has ideas outline, will be mainly XML)\
-5.1.	Output graph (Dmax vs Nmin vs cluster count etc.) \
-5.2.	Output cluster composition, sizes, number\ 
-6.	Random mass re-labeller (that is actually random!) (Peter is working on this)\
-6.1.	Compare results to this randomised set \
-6.2.	Perform statistical tests \
-7.	Analyse multiple .pos files at once to generate matrix/cluster files (batch analysis) (Hazel to work on this)\
-8.	Run simulation to check output of cluster search: \
-8.1.	Grab composition from existing file or provide one \
-8.2.	For a given box and number of cluster density (could be estimated from existing data), generate a random distribution of clusters of specific size distribution. This gives a “ground truth” which any subsequent searches can be checked against \
-8.3.	Run clustering on the simulated data and compare against true values:\
-8.3.1.	Where are the clusters detected? \
-8.3.2.	Were the right number detected? \
-8.3.3.	Did they have the correct composition? \
-8.4.	Were the ions classified correctly, TT/TF/FT/FF truth table?\
-9.	Reading cluster stats files\
-10.	Assist in easier use of posgen (e.g. adding bulk ions from range file) \
-11.	Nearest neighbour plot of cluster centres to minimise artificial joining/ splitting up of clusters \
-11.1.	Tool which can allow you to separate joined clusters\
-12.	Edge cluster identification and removal from composition/size calculations \
-13.	Morphology plots \
-14.	Local concentration filtering \
-15.	Other statistical tests, such as: \
-15.1.	Is cluster composition uniform? \
-15.2.	Is the composition of a species in a cluster significantly above matrix level?\
+1. Investigate using Windows Subsytem for Linux to simplify install and facilitate compatibility with libatomprobe (Peter to look into this)
+2.	Posgen output file reader, cluster-stats and size distribution (?who)
+3.	Range file reader (will specify all core and bulk ions for now and come back to this, may not need if we go with libatomprobe)
+4.	XML generator (Andy and James F working on this, **prototype working 29/4/20**)
+5.	Sweep Nmin, Dmax, Order, L, E (James F working on this, already has ideas outline, will be mainly XML)
+5.1.	Output graph (Dmax vs Nmin vs cluster count etc.) 
+5.2.	Output cluster composition, sizes, number
+6.	Random mass re-labeller (that is actually random!) (Peter is working on this)
+6.1.	Compare results to this randomised set 
+6.2.	Perform statistical tests
+7.	Analyse multiple .pos files at once to generate matrix/cluster files (batch analysis) (Hazel to work on this)
+8.	Run simulation to check output of cluster search:
+8.1.	Grab composition from existing file or provide one
+8.2.	For a given box and number of cluster density (could be estimated from existing data), generate a random distribution of clusters of specific size distribution. This gives a “ground truth” which any subsequent searches can be checked against
+8.3.	Run clustering on the simulated data and compare against true values:
+8.3.1.	Where are the clusters detected? 
+8.3.2.	Were the right number detected? 
+8.3.3.	Did they have the correct composition? 
+8.4.	Were the ions classified correctly, TT/TF/FT/FF truth table?
+9.	Reading cluster stats files
+10.	Assist in easier use of posgen (e.g. adding bulk ions from range file) 
+11.	Nearest neighbour plot of cluster centres to minimise artificial joining/ splitting up of clusters 
+11.1.	Tool which can allow you to separate joined clusters
+12.	Edge cluster identification and removal from composition/size calculations 
+13.	Morphology plots 
+14.	Local concentration filtering 
+15.	Other statistical tests, such as: 
+15.1.	Is cluster composition uniform? 
+15.2.	Is the composition of a species in a cluster significantly above matrix level?
 
 
 ## Overview
 General description of different functions.
+
+**writeClusterXML** Function to write an XML file that is read by `posgen` to perform max-sep clustering on a `pos` file.
+
 ## Terms
 **posgen** - an XML driven C++ executable which can do lots of pos-operations including generating simulated data and cluster analysis
 
