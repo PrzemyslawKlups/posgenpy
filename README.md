@@ -10,8 +10,23 @@ Installation
 6.	Within jupyter notebook, navigate to your GitHub folder and open ‘Posgen test.ipynb’
 
 ## To do
+### 01/05/20
+1. Peter: <br>
+1.1 Investigate WSL further <br>
+1.2 Parameter selection function: build on random relabelling work, with focus on data visualisation, to recreate graphs from Williams2013 paper (dx.doi.org/10.1016/j.ultramic.2012.12.011). Include 95% confidence intervals on plots.
+2. Andy: Write 'verbosity' patch for Posgen to supress command line output (can choose from 3 verbosity levels)
+3. James and Andy: multiple cluster options per XML file, so that .pos file only has to be loaded once
+4. Dan: option for posgen so that all non-core atoms can be included as bulk
+5. Hazel: investigate subprocess module (Popen) to get live terminal output using python
 
-1. Investigate using Windows Subsytem for Linux to simplify install and facilitate compatibility with libatomprobe (Peter to look into this)
+#### Other thoughts
+1. Pole removal feature
+2. Initial coarse parameter sweep to be followed by fine parameter sweep for cluster searching
+3. Options other than grid-based parameter searching do exist, and may be faster
+
+
+### 27/04/20
+1. Investigate using Windows Subsytem for Linux (WSL) to simplify install and facilitate compatibility with libatomprobe (Peter to look into this)
 2.	Posgen output file reader, cluster-stats and size distribution (?who)
 3.	Range file reader (will specify all core and bulk ions for now and come back to this, may not need if we go with libatomprobe)
 4.	XML generator (Andy and James F working on this, **prototype working 29/4/20**)
