@@ -14,9 +14,8 @@ Installation
 1. Peter: <br>
 1.1 Investigate WSL further <br>
 1.2 Parameter selection function: build on random relabelling work, with focus on data visualisation, to recreate graphs from Williams2013 paper (dx.doi.org/10.1016/j.ultramic.2012.12.011). Include 95% confidence intervals on plots.
-2. Andy: Write 'verbosity' patch for Posgen to supress command line output (can choose from 3 verbosity levels)
-3. James and Andy: multiple cluster options per XML file, so that .pos file only has to be loaded once
-4. Hazel: investigate subprocess module (Popen) to get live terminal output using python
+2. James and Andy: multiple cluster options per XML file, so that .pos file only has to be loaded once
+3. Hazel: investigate subprocess module (Popen) to get live terminal output using python
 
 #### Other thoughts
 1. Pole removal feature
