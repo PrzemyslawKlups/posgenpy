@@ -1,115 +1,119 @@
-#TODO: Would be better to create a class object to contain the parameters required, this will help reduce code breakage if interfaces change.
-def writeClusterXML(xmlFileName, posFile, rangeFile, coreIons, bulkIons,
-                          massRandomRelabel = False,
-                          dclassify = "0.0", 
-                          knn="1", 
-                          dmax = "0.5", 
-                          dbulk="0.2", 
-                          derode="0.2",
-                          nmin="2",
-                          nmax="-1",
-                          includeUnrangedPos=True,
-                          includeUnrangedStats=True,
-                          clusterstatsCore=True,
-                          clusterstatsBulk=True, 
-                          clusterstatsPercluster=True, 
-                          clusterstatsFile="cluster-stats.txt",
-                          unclusterstatsFile = "unclustered-stats.txt",
-                          sizedistFile="sizedist.txt",
-                          clusteredPosFile="cluster.pos",
-                          unclusteredPosFile="unclustered.pos",
-                          clusterIDPosFile="clusterID.pos"):
-    
+# TODO: Would be better to create a class object to contain the parameters required,
+# this will help reduce code breakage if interfaces change.
+
+
+def write_cluster_xml(xml_file, pos_file, range_file, core_ions, bulk_ions, *,
+                      mass_random_relabel=False,
+                      dclassify="0.0",
+                      knn="1",
+                      dmax="0.5",
+                      dbulk="0.2",
+                      derode="0.2",
+                      nmin="2",
+                      nmax="-1",
+                      include_unranged_pos=True,
+                      include_unranged_stats=True,
+                      clusterstats_core=True,
+                      clusterstats_bulk=True,
+                      clusterstats_percluster=True,
+                      clusterstats_file="cluster-stats.txt",
+                      unclusterstats_file="unclustered-stats.txt",
+                      sizedist_file="sizedist.txt",
+                      clustered_pos_file="cluster.pos",
+                      unclustered_pos_file="unclustered.pos",
+                      clusterid_pos_file="clusterID.pos"):
     """
     # TODO write some documentation
     
     Function to write an XML file to perform max-sep clustering on a pos file.
     
-    xmlFileName, posFile, rangeFile, coreIons, bulkIons are required
+    xml_file, pos_file, range_file, core_ions, bulk_ions are required
     
-    All inputs should be strings, except the core/bulk ion lists and massRandomRelabel (boolean)
+    All inputs should be strings, except the core/bulk ion lists and mass_random_relabel (boolean)
     
-    Set clusterstatsFile="" to not produce this file, similar for other output files
+    Set clusterstats_file="" to not produce this file, similar for other output files
     
-    See posgen manual for explaination of terms used in the XML file.
+    See posgen manual for explanation of terms used in the XML file.
     
     Requires lxml to run. Returns the lxml.etree._ElementTree object used to write the xml file.
     
     """
-    
+
     from lxml import etree
-    
+
     root = etree.Element("posscript")
-    root.append( etree.Element("version") )
+    root.append(etree.Element("version"))
     # insert pos file path
-    root.append( etree.Element("posload",file=posFile))
-    
+    root.append(etree.Element("posload", file=pos_file))
+
     # if mass randomisation is required
-    if massRandomRelabel:
-        root.append( etree.Element("relabel") )
-    
-	# TODO - this section should in a sub-function so the same
-	#	code can be called as part of cluster sweep, or another
-	#	function which write multiple <cluster/> operations in a 
-	#	single XML file
-	
+    if mass_random_relabel:
+        root.append(etree.Element("relabel"))
+
+    # TODO - this section should in a sub-function so the same
+    #   code can be called as part of cluster sweep, or another
+    #   function which write multiple <cluster/> operations in a
+    #   single XML file
+
     cluster = etree.SubElement(root, "cluster")
     algorithm = etree.SubElement(cluster, "algorithm", value="maxsep")
-    algorithm.append( etree.Element("dclassify", value=dclassify, knn=knn) )
-    algorithm.append( etree.Element("dmax", value=dmax) )
-    algorithm.append( etree.Element("dbulk", value=dbulk) )
-    algorithm.append( etree.Element("derode", value=derode) )
-    
+    algorithm.append(etree.Element("dclassify", value=dclassify, knn=knn))
+    algorithm.append(etree.Element("dmax", value=dmax))
+    algorithm.append(etree.Element("dbulk", value=dbulk))
+    algorithm.append(etree.Element("derode", value=derode))
+
     # insert range file path
-    cluster.append( etree.Element("range",file=rangeFile) )
+    cluster.append(etree.Element("range", file=range_file))
 
     core = etree.SubElement(cluster, "core")
     typelist = etree.SubElement(core, "typelist")
-    
+
     # List of core ions from coreList
-    for coreIon in coreIons:
-        typelist.append( etree.Element("atomtype", symbol=coreIon))
+    for coreIon in core_ions:
+        typelist.append(etree.Element("atomtype", symbol=coreIon))
 
     bulk = etree.SubElement(cluster, "bulk")
     typelist = etree.SubElement(bulk, "typelist")
-    for bulkIon in bulkIons:
-        typelist.append( etree.Element("atomtype", symbol=bulkIon))
+    for bulkIon in bulk_ions:
+        typelist.append(etree.Element("atomtype", symbol=bulkIon))
 
-    cluster.append( etree.Element("sizeclip", nmin=nmin, nmax=nmax))
+    cluster.append(etree.Element("sizeclip", nmin=nmin, nmax=nmax))
 
     # switch if unranged ions are required in either/both of the POS output or stats
-    if includeUnrangedPos or includeUnrangedStats:
-            cluster.append( etree.Element("unranged", foroutput=str(includeUnrangedPos), forstats=str(includeUnrangedStats)))
-    
-    # cluster stats options        
-    if clusterstatsFile:
-        cluster.append( etree.Element("clusterstats", 
-                                      core=str(clusterstatsCore), 
-                                      bulk=str(clusterstatsBulk), 
-                                      percluster=str(clusterstatsPercluster), 
-                                      file=str(clusterstatsFile)))
-    # not-clustered stats options  
-    if unclusterstatsFile:
-        cluster.append( etree.Element("unclusterstats", file=unclusterstatsFile))
-    
-    if sizedistFile:
-        cluster.append( etree.Element("sizedist", file=sizedistFile))
-    
-    if clusteredPosFile:
-        cluster.append( etree.Element("clustered-pos", file=clusteredPosFile, retain="true"))
-        
-    if unclusteredPosFile:
-        cluster.append( etree.Element("unclustered-pos", file=unclusteredPosFile, retain="true"))
+    if include_unranged_pos or include_unranged_stats:
+        cluster.append(etree.Element("unranged",
+                                     foroutput=str(include_unranged_pos),
+                                     forstats=str(include_unranged_stats)))
 
-    if clusterIDPosFile:
-        cluster.append( etree.Element("clusterid", file=clusterIDPosFile, offset="1"))
+    # cluster stats options        
+    if clusterstats_file:
+        cluster.append(etree.Element("clusterstats",
+                                     core=str(clusterstats_core),
+                                     bulk=str(clusterstats_bulk),
+                                     percluster=str(clusterstats_percluster),
+                                     file=str(clusterstats_file)))
+    # not-clustered stats options  
+    if unclusterstats_file:
+        cluster.append(etree.Element("unclusterstats", file=unclusterstats_file))
+
+    if sizedist_file:
+        cluster.append(etree.Element("sizedist", file=sizedist_file))
+
+    if clustered_pos_file:
+        cluster.append(etree.Element("clustered-pos", file=clustered_pos_file, retain="true"))
+
+    if unclustered_pos_file:
+        cluster.append(etree.Element("unclustered-pos", file=unclustered_pos_file, retain="true"))
+
+    if clusterid_pos_file:
+        cluster.append(etree.Element("clusterid", file=clusterid_pos_file, offset="1"))
 
     # pre-view with print
-    #print((etree.tostring(root, pretty_print=True, encoding='utf8').decode('utf8')))
+    # print((etree.tostring(root, pretty_print=True, encoding='utf8').decode('utf8')))
 
     # write XML file
     tree = root.getroottree()
-    tree.write(xmlFileName, 
-           doctype = "<!DOCTYPE posscript SYSTEM \"posscript.dtd\">",
-              pretty_print=True)
+    tree.write(xml_file,
+               doctype="<!DOCTYPE posscript SYSTEM \"posscript.dtd\">",
+               pretty_print=True)
     return tree
