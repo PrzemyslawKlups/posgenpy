@@ -10,12 +10,20 @@ Installation
 6.	Within jupyter notebook, navigate to your GitHub folder and open ‘Posgen test.ipynb’
 
 ## To do
+### 07/05/20
+1. Peter to write up instructions for WSL install. Include copy/paste instructions for Linux WSL, and instructions for mounting external drive.
+2. Someone to write shell script to make linux install easy.
+3. Jupyter notebook examples for libatomprobe.
+4. Example files for puthon for libatomrpobe example folder.
+5. James (and Andy) to write up Word doc for XML file generator as functions, and upload to github.
+6. Peter to push his posfile relabelling jupyter notebook to github.
+
 ### 01/05/20
 1. Peter: <br>
 1.1 Investigate WSL further <br>
 1.2 Parameter selection function: build on random relabelling work, with focus on data visualisation, to recreate graphs from Williams2013 paper (dx.doi.org/10.1016/j.ultramic.2012.12.011). Include 95% confidence intervals on plots.
 2. James and Andy: multiple cluster options per XML file, so that .pos file only has to be loaded once
-3. Hazel: investigate subprocess module (Popen) to get live terminal output using python
+3. Hazel: investigate subprocess module (Popen) to get live terminal output using python (completed by Andy, Andy to push to github)
 
 #### Other thoughts
 1. Pole removal feature
