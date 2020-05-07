@@ -14,7 +14,7 @@ Installation
 1. Peter to write up instructions for WSL install. Include copy/paste instructions for Linux WSL, and instructions for mounting external drive.
 2. Someone to write shell script to make linux install easy.
 3. Jupyter notebook examples for libatomprobe.
-4. Example files for puthon for libatomrpobe example folder.
+4. Example files for python for libatomprobe example folder.
 5. James (and Andy) to write up Word doc for XML file generator as functions, and upload to github.
 6. Peter to push his posfile relabelling jupyter notebook to github.
 
