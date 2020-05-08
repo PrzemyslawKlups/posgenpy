@@ -6,17 +6,17 @@ Installation
 2.	Install posgen (https://sourceforge.net/projects/apttools/files/posgen/0.0.3/) 
 3.	Install GitHub Desktop (https://desktop.github.com/)
 4.	Clone the posgenpy repo from GitHub to your local computer so that it can be used in GitHub Desktop
-5.	Open Anaconda Navigator and then launch jupyter notebook
-6.	Within jupyter notebook, navigate to your GitHub folder and open ‘Posgen test.ipynb’
+5.	Run the support/compile.sh script to download and compile libatomprobe
+6.	Open Anaconda Navigator and then launch jupyter notebook
+7.	Within jupyter notebook, navigate to your GitHub folder and open ‘Posgen test.ipynb’
 
 ## To do
 ### 07/05/20
 1. Peter to write up instructions for WSL install. Include copy/paste instructions for Linux WSL, and instructions for mounting external drive.
-2. Someone to write shell script to make linux install easy.
-3. Jupyter notebook examples for libatomprobe.
-4. Example files for python for libatomprobe example folder.
-5. James (and Andy) to write up Word doc for XML file generator as functions, and upload to github.
-6. Peter to push his posfile relabelling jupyter notebook to github.
+2. Jupyter notebook examples for libatomprobe.
+3. Example files for python for libatomprobe example folder.
+4. James (and Andy) to write up Word doc for XML file generator as functions, and upload to github.
+5. Peter to push his posfile relabelling jupyter notebook to github.
 
 ### 01/05/20
 1. Peter: <br>
