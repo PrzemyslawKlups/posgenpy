@@ -4,13 +4,13 @@
 
 def write_cluster_xml(xml_file, pos_file, range_file, core_ions, bulk_ions, *,
                       mass_random_relabel=False,
-                      dclassify="0.0",
-                      knn="1",
-                      dmax="0.5",
-                      dbulk="0.2",
-                      derode="0.2",
-                      nmin="2",
-                      nmax="-1",
+                      dclassify:float=0.0, 
+                      knn: int =1,
+                      dmax: float=0.5 ,
+                      dbulk: float=0.2 ,
+                      derode: float=0.2 ,
+                      nmin: int=2 ,
+                      nmax: int=-1 ,
                       include_unranged_pos=True,
                       include_unranged_stats=True,
                       clusterstats_core=True,
@@ -57,10 +57,10 @@ def write_cluster_xml(xml_file, pos_file, range_file, core_ions, bulk_ions, *,
 
     cluster = etree.SubElement(root, "cluster")
     algorithm = etree.SubElement(cluster, "algorithm", value="maxsep")
-    algorithm.append(etree.Element("dclassify", value=dclassify, knn=knn))
-    algorithm.append(etree.Element("dmax", value=dmax))
-    algorithm.append(etree.Element("dbulk", value=dbulk))
-    algorithm.append(etree.Element("derode", value=derode))
+    algorithm.append(etree.Element("dclassify", value=str(dclassify), knn=str(knn)))
+    algorithm.append(etree.Element("dmax", value=str(dmax)))
+    algorithm.append(etree.Element("dbulk", value=str(dbulk)))
+    algorithm.append(etree.Element("derode", value=str(derode)))
 
     # insert range file path
     cluster.append(etree.Element("range", file=range_file))
@@ -77,7 +77,7 @@ def write_cluster_xml(xml_file, pos_file, range_file, core_ions, bulk_ions, *,
     for bulkIon in bulk_ions:
         typelist.append(etree.Element("atomtype", symbol=bulkIon))
 
-    cluster.append(etree.Element("sizeclip", nmin=nmin, nmax=nmax))
+    cluster.append(etree.Element("sizeclip", nmin=str(nmin), nmax=str(nmax)))
 
     # switch if unranged ions are required in either/both of the POS output or stats
     if include_unranged_pos or include_unranged_stats:
