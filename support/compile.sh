@@ -23,3 +23,5 @@ make -j2  || { echo "library compilation failed. Aborting"; exit 1 ; }
 
 #install library
 sudo make install
+#Run linker configurer
+sudo ldconfig
