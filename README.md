@@ -10,6 +10,39 @@ Installation
 6.	Open Anaconda Navigator and then launch jupyter notebook
 7.	Within jupyter notebook, navigate to your GitHub folder and open ‘Posgen test.ipynb’
 
+## Installation of libatomprobe for Windows Subsystem for Linux (WSL)
+
+WSL is a light-weight virtuaisation system for running linux applications
+under Windows, in a "native" way. libatomprobe can be used in this way,
+including with python support
+
+To install WSL, follow these instructions, entering commands in WSL
+* Install  WSL and Ubuntu App 
+    Go to this URL : https://docs.microsoft.com/en-us/windows/wsl/install-win10
+* (optional) Update Python (run command from inside WSL)
+    > ```$ sudo apt-get update && sudo apt-get upgrade && sudo apt-get install python3```
+* Install dependencies (run command from inside WSL)
+    > ```sudo apt-get update && sudo apt-get upgrade && sudo apt-get install libgsl-dev libqhull-dev libxml2-dev g++ cmake swig```
+* (optional) Enable python support in libatomprobe
+    - In CMakeLists.txt, change "set(ENABLE_SWIG no)" to "set(ENABLE_SWIG yes)"
+* From libatomprobe/ directory, run: 
+   > ```$ cmake .```
+   > ```$ make```
+   > ```$ sudo make install```
+    
+Useful hints for using WSL: 
+* paste text into the terminal using right-click (ctrl+v does not work)
+* to access files from Windows drives change ```C:\...``` into ```/mnt/c/```. Remember to change all backslashes to 
+    forward slashes ("\\" => "/")
+* to access data from an external drive, e.g. D:
+    * create a directory if needed 
+        > ``` $ sudo mkdir /mnt/d ``` 
+    * mount the drive
+        > ```$ sudo mount -t drvfs D: /mnt/d```
+    * now the data is accessable from ```/mnt/d```
+    * safely unmount the drive at the end of the session 
+        > ```$ sudo umount /mnt/d```
+
 ## To do
 ### 07/05/20
 1. Peter to write up instructions for WSL install. Include copy/paste instructions for Linux WSL, and instructions for mounting external drive.
