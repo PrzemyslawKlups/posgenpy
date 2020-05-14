@@ -1,0 +1,3644 @@
+<!DOCTYPE posscript SYSTEM "posscript.dtd">
+<posscript>
+	<version value="0.0.1"/>
+
+	<!-- store the matrix data -->
+ <spatrand>
+ 	<bound x="40.000000" y="40.000000" z="40.000000"/>
+ 	<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="3.000000"/>
+
+		<atom index="(000)" mass="2.000000"/>
+		<count value="3.000000"/>
+
+		<atom index="(000)" mass="3.000000"/>
+		<count value="94.000000"/>
+
+
+ </spatrand>
+
+ <geotransform> <translate><x value="-20.00000"/><y value="-20.00000"/><z value="-20.00000"/></translate></geotransform>
+
+	<clip invert="true">  <sphere radius="0.66238"> <x value="8.80149"/> <y value="4.38231"/> <z value="6.64783"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.53098"> <x value="4.25683"/> <y value="8.14665"/> <z value="17.78264"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.84360"> <x value="-2.11358"/> <y value="6.84473"/> <z value="19.88666"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.82654"> <x value="-9.35056"/> <y value="-18.63805"/> <z value="14.85027"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.74711"> <x value="8.94332"/> <y value="0.63776"/> <z value="-19.75764"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.21043"> <x value="-18.28306"/> <y value="2.50178"/> <z value="13.91249"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.86040"> <x value="-12.14069"/> <y value="10.68843"/> <z value="-0.79232"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.67382"> <x value="-4.29839"/> <y value="20.14572"/> <z value="8.22325"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.57571"> <x value="-10.94794"/> <y value="1.48419"/> <z value="6.82332"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.78482"> <x value="-3.67578"/> <y value="-2.71448"/> <z value="7.48699"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.64917"> <x value="20.58521"/> <y value="8.31971"/> <z value="-18.43185"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.56404"> <x value="9.48748"/> <y value="18.07417"/> <z value="-15.72631"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.30872"> <x value="11.68243"/> <y value="16.45781"/> <z value="3.72653"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.44904"> <x value="4.68014"/> <y value="-13.91818"/> <z value="-19.37456"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="1.03525"> <x value="11.39659"/> <y value="-13.33295"/> <z value="-2.58977"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.63035"> <x value="-9.74280"/> <y value="7.26808"/> <z value="7.37973"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.92967"> <x value="-15.39099"/> <y value="-19.92083"/> <z value="1.75181"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="1.00567"> <x value="-19.37140"/> <y value="9.14982"/> <z value="11.67672"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.84031"> <x value="-6.00017"/> <y value="-13.62740"/> <z value="-9.61622"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.88452"> <x value="-15.73665"/> <y value="-4.90655"/> <z value="4.78681"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.69699"> <x value="10.86076"/> <y value="7.54137"/> <z value="4.62393"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.61405"> <x value="14.46835"/> <y value="17.72784"/> <z value="-3.20996"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.93474"> <x value="-15.73732"/> <y value="18.05672"/> <z value="12.01042"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.66768"> <x value="17.58656"/> <y value="12.93084"/> <z value="-13.84871"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.90639"> <x value="19.29593"/> <y value="16.80851"/> <z value="-14.88403"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.71431"> <x value="-2.31599"/> <y value="11.24466"/> <z value="10.68420"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.45351"> <x value="-12.26177"/> <y value="8.19380"/> <z value="2.02199"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.96888"> <x value="16.90244"/> <y value="17.81942"/> <z value="0.73573"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.48920"> <x value="18.03445"/> <y value="-12.92034"/> <z value="-8.44205"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.75761"> <x value="10.65465"/> <y value="-7.12234"/> <z value="6.91655"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="1.02442"> <x value="-4.33815"/> <y value="13.24454"/> <z value="11.75548"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.89016"> <x value="-1.46923"/> <y value="19.33084"/> <z value="11.83534"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.87458"> <x value="-12.73161"/> <y value="-16.24428"/> <z value="-16.16911"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.52528"> <x value="11.04219"/> <y value="16.88411"/> <z value="12.05062"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="1.17743"> <x value="-15.59563"/> <y value="-10.33683"/> <z value="17.70903"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.53407"> <x value="17.92386"/> <y value="14.60893"/> <z value="20.39343"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.48790"> <x value="-9.05484"/> <y value="-16.95134"/> <z value="3.45439"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.72860"> <x value="11.59200"/> <y value="20.61099"/> <z value="-6.62782"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.85840"> <x value="15.50977"/> <y value="20.81773"/> <z value="3.54794"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.69711"> <x value="1.59222"/> <y value="-13.80917"/> <z value="-19.35793"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.67689"> <x value="18.43996"/> <y value="-19.51730"/> <z value="8.05196"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.39356"> <x value="-4.11274"/> <y value="-18.93476"/> <z value="-15.70540"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.35816"> <x value="19.09189"/> <y value="-1.45930"/> <z value="-0.81296"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.56803"> <x value="-20.47280"/> <y value="18.14206"/> <z value="9.90035"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.85542"> <x value="-5.91623"/> <y value="0.17648"/> <z value="13.68949"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.45913"> <x value="-10.57770"/> <y value="-18.82612"/> <z value="-15.45315"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.50880"> <x value="8.82595"/> <y value="19.57948"/> <z value="-5.78616"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.58919"> <x value="-10.02466"/> <y value="-6.67926"/> <z value="-2.50175"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.49164"> <x value="2.58893"/> <y value="-1.43795"/> <z value="8.59968"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.65169"> <x value="11.98707"/> <y value="17.53882"/> <z value="-20.79835"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.76941"> <x value="-10.91280"/> <y value="-15.32768"/> <z value="-4.40784"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.29804"> <x value="-5.12914"/> <y value="-8.31728"/> <z value="-13.67286"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.56013"> <x value="16.75900"/> <y value="-19.21879"/> <z value="17.62331"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="1.09399"> <x value="8.52977"/> <y value="-14.48123"/> <z value="6.95758"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.70703"> <x value="0.94562"/> <y value="-3.54959"/> <z value="-17.36139"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.82231"> <x value="-21.17251"/> <y value="-14.20021"/> <z value="5.51203"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.56236"> <x value="11.02793"/> <y value="20.34731"/> <z value="-11.51041"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.64919"> <x value="-18.59931"/> <y value="-13.18362"/> <z value="-1.80041"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.73942"> <x value="17.86058"/> <y value="-2.14438"/> <z value="-8.61897"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.28518"> <x value="16.44716"/> <y value="-17.39407"/> <z value="-8.07222"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.22683"> <x value="-15.22321"/> <y value="-12.68073"/> <z value="9.43051"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="1.01012"> <x value="-0.25623"/> <y value="0.94346"/> <z value="-7.18801"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.86394"> <x value="0.09041"/> <y value="12.42240"/> <z value="-3.74545"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.38168"> <x value="-15.31376"/> <y value="13.62675"/> <z value="-14.21064"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.83054"> <x value="14.32962"/> <y value="10.81113"/> <z value="-1.81701"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.34430"> <x value="-14.33884"/> <y value="-7.81603"/> <z value="-15.63137"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.77216"> <x value="-18.24633"/> <y value="-7.24809"/> <z value="-19.77015"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.73931"> <x value="-3.08902"/> <y value="-16.98136"/> <z value="18.23620"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.90510"> <x value="-3.29313"/> <y value="-20.63109"/> <z value="11.09438"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="1.00056"> <x value="-10.86539"/> <y value="-4.26738"/> <z value="0.35344"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.75241"> <x value="9.58315"/> <y value="18.73671"/> <z value="-0.43998"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.75119"> <x value="-1.44989"/> <y value="21.09183"/> <z value="2.20930"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.55759"> <x value="14.59412"/> <y value="-14.13195"/> <z value="-12.52452"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="1.16291"> <x value="1.92656"/> <y value="-9.07448"/> <z value="6.88052"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.74034"> <x value="-12.26416"/> <y value="0.08909"/> <z value="19.30318"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.76227"> <x value="20.92324"/> <y value="13.66706"/> <z value="-10.36336"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.33914"> <x value="-10.19492"/> <y value="14.73213"/> <z value="11.19604"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.82521"> <x value="11.39144"/> <y value="-9.59168"/> <z value="2.66323"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.61336"> <x value="3.88923"/> <y value="15.02451"/> <z value="-15.17582"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.73020"> <x value="-3.14303"/> <y value="-1.79387"/> <z value="-12.60239"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.14412"> <x value="-11.30202"/> <y value="4.82776"/> <z value="-14.32560"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.66347"> <x value="-0.98728"/> <y value="-10.67173"/> <z value="-16.47556"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="1.05360"> <x value="-7.96485"/> <y value="17.36050"/> <z value="-0.48928"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="1.17393"> <x value="17.93422"/> <y value="-13.13405"/> <z value="18.54458"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.62333"> <x value="2.18370"/> <y value="2.52582"/> <z value="-6.41478"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.23948"> <x value="-6.00014"/> <y value="-1.43778"/> <z value="-7.90614"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.74356"> <x value="2.05701"/> <y value="-14.00738"/> <z value="1.52340"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.37101"> <x value="20.02889"/> <y value="-0.81604"/> <z value="-16.60881"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.48247"> <x value="-1.65831"/> <y value="-4.06611"/> <z value="-7.26773"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.91588"> <x value="-10.70343"/> <y value="-15.08146"/> <z value="-1.53571"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.92355"> <x value="-1.79080"/> <y value="10.05986"/> <z value="2.21351"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.75790"> <x value="-2.76878"/> <y value="-20.87837"/> <z value="3.46196"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.25830"> <x value="-8.02445"/> <y value="-6.30606"/> <z value="-7.88402"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.68122"> <x value="7.36506"/> <y value="3.85868"/> <z value="-12.58333"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.33681"> <x value="19.37634"/> <y value="-5.53470"/> <z value="17.39064"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.94323"> <x value="-5.39413"/> <y value="13.89168"/> <z value="-16.01178"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.92778"> <x value="15.00894"/> <y value="18.19163"/> <z value="-14.14954"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.53631"> <x value="4.44794"/> <y value="-1.02789"/> <z value="10.99290"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.60239"> <x value="-16.47272"/> <y value="-11.00025"/> <z value="12.91823"/> </sphere>  </clip>
+	<clip invert="true">  <sphere radius="0.83248"> <x value="16.14129"/> <y value="-20.24441"/> <z value="-20.57401"/> </sphere>  </clip>
+	<store name="running_dataset" forceram="true" clear="true"/>
+
+
+	<!-- START PPT  1 -->
+	<spatrand>
+    <bound x="1.324769" y="1.324769" z="1.324769"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.662384"/>
+			<y value="-0.662384"/>
+			<z value="-0.662384"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.662384">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="8.801486"/>
+			<y value="4.382310"/>
+			<z value="6.647827"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  1 -->
+
+	<!-- START PPT  2 -->
+	<spatrand>
+    <bound x="1.061954" y="1.061954" z="1.061954"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.530977"/>
+			<y value="-0.530977"/>
+			<z value="-0.530977"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.530977">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="4.256833"/>
+			<y value="8.146655"/>
+			<z value="17.782636"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  2 -->
+
+	<!-- START PPT  3 -->
+	<spatrand>
+    <bound x="1.687202" y="1.687202" z="1.687202"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.843601"/>
+			<y value="-0.843601"/>
+			<z value="-0.843601"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.843601">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-2.113583"/>
+			<y value="6.844732"/>
+			<z value="19.886664"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  3 -->
+
+	<!-- START PPT  4 -->
+	<spatrand>
+    <bound x="1.653088" y="1.653088" z="1.653088"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.826544"/>
+			<y value="-0.826544"/>
+			<z value="-0.826544"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.826544">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-9.350561"/>
+			<y value="-18.638047"/>
+			<z value="14.850271"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  4 -->
+
+	<!-- START PPT  5 -->
+	<spatrand>
+    <bound x="1.494219" y="1.494219" z="1.494219"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.747109"/>
+			<y value="-0.747109"/>
+			<z value="-0.747109"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.747109">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="8.943317"/>
+			<y value="0.637765"/>
+			<z value="-19.757637"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  5 -->
+
+	<!-- START PPT  6 -->
+	<spatrand>
+    <bound x="0.420851" y="0.420851" z="0.420851"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.210426"/>
+			<y value="-0.210426"/>
+			<z value="-0.210426"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.210426">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-18.283062"/>
+			<y value="2.501775"/>
+			<z value="13.912490"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  6 -->
+
+	<!-- START PPT  7 -->
+	<spatrand>
+    <bound x="1.720798" y="1.720798" z="1.720798"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.860399"/>
+			<y value="-0.860399"/>
+			<z value="-0.860399"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.860399">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-12.140691"/>
+			<y value="10.688432"/>
+			<z value="-0.792318"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  7 -->
+
+	<!-- START PPT  8 -->
+	<spatrand>
+    <bound x="1.347636" y="1.347636" z="1.347636"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.673818"/>
+			<y value="-0.673818"/>
+			<z value="-0.673818"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.673818">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-4.298387"/>
+			<y value="20.145716"/>
+			<z value="8.223251"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  8 -->
+
+	<!-- START PPT  9 -->
+	<spatrand>
+    <bound x="1.151416" y="1.151416" z="1.151416"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.575708"/>
+			<y value="-0.575708"/>
+			<z value="-0.575708"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.575708">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-10.947942"/>
+			<y value="1.484194"/>
+			<z value="6.823320"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  9 -->
+
+	<!-- START PPT  10 -->
+	<spatrand>
+    <bound x="1.569645" y="1.569645" z="1.569645"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.784822"/>
+			<y value="-0.784822"/>
+			<z value="-0.784822"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.784822">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-3.675784"/>
+			<y value="-2.714484"/>
+			<z value="7.486985"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  10 -->
+
+	<!-- START PPT  11 -->
+	<spatrand>
+    <bound x="1.298339" y="1.298339" z="1.298339"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.649169"/>
+			<y value="-0.649169"/>
+			<z value="-0.649169"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.649169">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="20.585215"/>
+			<y value="8.319711"/>
+			<z value="-18.431854"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  11 -->
+
+	<!-- START PPT  12 -->
+	<spatrand>
+    <bound x="1.128085" y="1.128085" z="1.128085"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.564042"/>
+			<y value="-0.564042"/>
+			<z value="-0.564042"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.564042">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="9.487483"/>
+			<y value="18.074172"/>
+			<z value="-15.726309"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  12 -->
+
+	<!-- START PPT  13 -->
+	<spatrand>
+    <bound x="0.617445" y="0.617445" z="0.617445"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.308723"/>
+			<y value="-0.308723"/>
+			<z value="-0.308723"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.308723">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="11.682434"/>
+			<y value="16.457809"/>
+			<z value="3.726526"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  13 -->
+
+	<!-- START PPT  14 -->
+	<spatrand>
+    <bound x="0.898077" y="0.898077" z="0.898077"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.449039"/>
+			<y value="-0.449039"/>
+			<z value="-0.449039"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.449039">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="4.680138"/>
+			<y value="-13.918178"/>
+			<z value="-19.374562"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  14 -->
+
+	<!-- START PPT  15 -->
+	<spatrand>
+    <bound x="2.070506" y="2.070506" z="2.070506"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-1.035253"/>
+			<y value="-1.035253"/>
+			<z value="-1.035253"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="1.035253">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="11.396591"/>
+			<y value="-13.332950"/>
+			<z value="-2.589765"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  15 -->
+
+	<!-- START PPT  16 -->
+	<spatrand>
+    <bound x="1.260698" y="1.260698" z="1.260698"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.630349"/>
+			<y value="-0.630349"/>
+			<z value="-0.630349"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.630349">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-9.742797"/>
+			<y value="7.268085"/>
+			<z value="7.379727"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  16 -->
+
+	<!-- START PPT  17 -->
+	<spatrand>
+    <bound x="1.859339" y="1.859339" z="1.859339"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.929670"/>
+			<y value="-0.929670"/>
+			<z value="-0.929670"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.929670">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-15.390991"/>
+			<y value="-19.920825"/>
+			<z value="1.751806"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  17 -->
+
+	<!-- START PPT  18 -->
+	<spatrand>
+    <bound x="2.011338" y="2.011338" z="2.011338"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-1.005669"/>
+			<y value="-1.005669"/>
+			<z value="-1.005669"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="1.005669">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-19.371396"/>
+			<y value="9.149820"/>
+			<z value="11.676718"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  18 -->
+
+	<!-- START PPT  19 -->
+	<spatrand>
+    <bound x="1.680617" y="1.680617" z="1.680617"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.840308"/>
+			<y value="-0.840308"/>
+			<z value="-0.840308"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.840308">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-6.000165"/>
+			<y value="-13.627402"/>
+			<z value="-9.616219"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  19 -->
+
+	<!-- START PPT  20 -->
+	<spatrand>
+    <bound x="1.769035" y="1.769035" z="1.769035"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.884517"/>
+			<y value="-0.884517"/>
+			<z value="-0.884517"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.884517">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-15.736652"/>
+			<y value="-4.906549"/>
+			<z value="4.786806"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  20 -->
+
+	<!-- START PPT  21 -->
+	<spatrand>
+    <bound x="1.393986" y="1.393986" z="1.393986"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.696993"/>
+			<y value="-0.696993"/>
+			<z value="-0.696993"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.696993">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="10.860759"/>
+			<y value="7.541369"/>
+			<z value="4.623925"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  21 -->
+
+	<!-- START PPT  22 -->
+	<spatrand>
+    <bound x="1.228095" y="1.228095" z="1.228095"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.614048"/>
+			<y value="-0.614048"/>
+			<z value="-0.614048"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.614048">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="14.468346"/>
+			<y value="17.727841"/>
+			<z value="-3.209955"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  22 -->
+
+	<!-- START PPT  23 -->
+	<spatrand>
+    <bound x="1.869482" y="1.869482" z="1.869482"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.934741"/>
+			<y value="-0.934741"/>
+			<z value="-0.934741"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.934741">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-15.737319"/>
+			<y value="18.056719"/>
+			<z value="12.010423"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  23 -->
+
+	<!-- START PPT  24 -->
+	<spatrand>
+    <bound x="1.335352" y="1.335352" z="1.335352"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.667676"/>
+			<y value="-0.667676"/>
+			<z value="-0.667676"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.667676">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="17.586564"/>
+			<y value="12.930842"/>
+			<z value="-13.848712"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  24 -->
+
+	<!-- START PPT  25 -->
+	<spatrand>
+    <bound x="1.812781" y="1.812781" z="1.812781"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.906391"/>
+			<y value="-0.906391"/>
+			<z value="-0.906391"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.906391">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="19.295931"/>
+			<y value="16.808514"/>
+			<z value="-14.884029"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  25 -->
+
+	<!-- START PPT  26 -->
+	<spatrand>
+    <bound x="1.428625" y="1.428625" z="1.428625"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.714313"/>
+			<y value="-0.714313"/>
+			<z value="-0.714313"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.714313">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-2.315993"/>
+			<y value="11.244661"/>
+			<z value="10.684204"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  26 -->
+
+	<!-- START PPT  27 -->
+	<spatrand>
+    <bound x="0.907028" y="0.907028" z="0.907028"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.453514"/>
+			<y value="-0.453514"/>
+			<z value="-0.453514"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.453514">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-12.261774"/>
+			<y value="8.193800"/>
+			<z value="2.021992"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  27 -->
+
+	<!-- START PPT  28 -->
+	<spatrand>
+    <bound x="1.937763" y="1.937763" z="1.937763"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.968881"/>
+			<y value="-0.968881"/>
+			<z value="-0.968881"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.968881">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="16.902443"/>
+			<y value="17.819415"/>
+			<z value="0.735732"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  28 -->
+
+	<!-- START PPT  29 -->
+	<spatrand>
+    <bound x="0.978397" y="0.978397" z="0.978397"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.489199"/>
+			<y value="-0.489199"/>
+			<z value="-0.489199"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.489199">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="18.034453"/>
+			<y value="-12.920341"/>
+			<z value="-8.442048"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  29 -->
+
+	<!-- START PPT  30 -->
+	<spatrand>
+    <bound x="1.515217" y="1.515217" z="1.515217"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.757609"/>
+			<y value="-0.757609"/>
+			<z value="-0.757609"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.757609">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="10.654651"/>
+			<y value="-7.122338"/>
+			<z value="6.916547"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  30 -->
+
+	<!-- START PPT  31 -->
+	<spatrand>
+    <bound x="2.048833" y="2.048833" z="2.048833"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-1.024416"/>
+			<y value="-1.024416"/>
+			<z value="-1.024416"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="1.024416">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-4.338147"/>
+			<y value="13.244541"/>
+			<z value="11.755480"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  31 -->
+
+	<!-- START PPT  32 -->
+	<spatrand>
+    <bound x="1.780320" y="1.780320" z="1.780320"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.890160"/>
+			<y value="-0.890160"/>
+			<z value="-0.890160"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.890160">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-1.469227"/>
+			<y value="19.330837"/>
+			<z value="11.835340"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  32 -->
+
+	<!-- START PPT  33 -->
+	<spatrand>
+    <bound x="1.749160" y="1.749160" z="1.749160"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.874580"/>
+			<y value="-0.874580"/>
+			<z value="-0.874580"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.874580">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-12.731608"/>
+			<y value="-16.244284"/>
+			<z value="-16.169107"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  33 -->
+
+	<!-- START PPT  34 -->
+	<spatrand>
+    <bound x="1.050557" y="1.050557" z="1.050557"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.525278"/>
+			<y value="-0.525278"/>
+			<z value="-0.525278"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.525278">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="11.042191"/>
+			<y value="16.884114"/>
+			<z value="12.050618"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  34 -->
+
+	<!-- START PPT  35 -->
+	<spatrand>
+    <bound x="2.354855" y="2.354855" z="2.354855"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-1.177428"/>
+			<y value="-1.177428"/>
+			<z value="-1.177428"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="1.177428">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-15.595630"/>
+			<y value="-10.336832"/>
+			<z value="17.709029"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  35 -->
+
+	<!-- START PPT  36 -->
+	<spatrand>
+    <bound x="1.068139" y="1.068139" z="1.068139"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.534070"/>
+			<y value="-0.534070"/>
+			<z value="-0.534070"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.534070">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="17.923856"/>
+			<y value="14.608931"/>
+			<z value="20.393428"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  36 -->
+
+	<!-- START PPT  37 -->
+	<spatrand>
+    <bound x="0.975803" y="0.975803" z="0.975803"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.487901"/>
+			<y value="-0.487901"/>
+			<z value="-0.487901"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.487901">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-9.054839"/>
+			<y value="-16.951338"/>
+			<z value="3.454392"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  37 -->
+
+	<!-- START PPT  38 -->
+	<spatrand>
+    <bound x="1.457199" y="1.457199" z="1.457199"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.728599"/>
+			<y value="-0.728599"/>
+			<z value="-0.728599"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.728599">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="11.592002"/>
+			<y value="20.610987"/>
+			<z value="-6.627821"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  38 -->
+
+	<!-- START PPT  39 -->
+	<spatrand>
+    <bound x="1.716798" y="1.716798" z="1.716798"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.858399"/>
+			<y value="-0.858399"/>
+			<z value="-0.858399"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.858399">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="15.509773"/>
+			<y value="20.817732"/>
+			<z value="3.547936"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  39 -->
+
+	<!-- START PPT  40 -->
+	<spatrand>
+    <bound x="1.394228" y="1.394228" z="1.394228"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.697114"/>
+			<y value="-0.697114"/>
+			<z value="-0.697114"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.697114">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="1.592224"/>
+			<y value="-13.809171"/>
+			<z value="-19.357929"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  40 -->
+
+	<!-- START PPT  41 -->
+	<spatrand>
+    <bound x="1.353782" y="1.353782" z="1.353782"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.676891"/>
+			<y value="-0.676891"/>
+			<z value="-0.676891"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.676891">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="18.439957"/>
+			<y value="-19.517304"/>
+			<z value="8.051965"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  41 -->
+
+	<!-- START PPT  42 -->
+	<spatrand>
+    <bound x="0.787124" y="0.787124" z="0.787124"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.393562"/>
+			<y value="-0.393562"/>
+			<z value="-0.393562"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.393562">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-4.112744"/>
+			<y value="-18.934758"/>
+			<z value="-15.705401"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  42 -->
+
+	<!-- START PPT  43 -->
+	<spatrand>
+    <bound x="0.716313" y="0.716313" z="0.716313"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.358157"/>
+			<y value="-0.358157"/>
+			<z value="-0.358157"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.358157">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="19.091893"/>
+			<y value="-1.459298"/>
+			<z value="-0.812956"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  43 -->
+
+	<!-- START PPT  44 -->
+	<spatrand>
+    <bound x="1.136063" y="1.136063" z="1.136063"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.568031"/>
+			<y value="-0.568031"/>
+			<z value="-0.568031"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.568031">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-20.472799"/>
+			<y value="18.142061"/>
+			<z value="9.900354"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  44 -->
+
+	<!-- START PPT  45 -->
+	<spatrand>
+    <bound x="1.710848" y="1.710848" z="1.710848"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.855424"/>
+			<y value="-0.855424"/>
+			<z value="-0.855424"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.855424">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-5.916232"/>
+			<y value="0.176477"/>
+			<z value="13.689493"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  45 -->
+
+	<!-- START PPT  46 -->
+	<spatrand>
+    <bound x="0.918269" y="0.918269" z="0.918269"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.459134"/>
+			<y value="-0.459134"/>
+			<z value="-0.459134"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.459134">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-10.577699"/>
+			<y value="-18.826115"/>
+			<z value="-15.453145"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  46 -->
+
+	<!-- START PPT  47 -->
+	<spatrand>
+    <bound x="1.017605" y="1.017605" z="1.017605"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.508802"/>
+			<y value="-0.508802"/>
+			<z value="-0.508802"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.508802">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="8.825948"/>
+			<y value="19.579477"/>
+			<z value="-5.786156"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  47 -->
+
+	<!-- START PPT  48 -->
+	<spatrand>
+    <bound x="1.178378" y="1.178378" z="1.178378"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.589189"/>
+			<y value="-0.589189"/>
+			<z value="-0.589189"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.589189">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-10.024662"/>
+			<y value="-6.679261"/>
+			<z value="-2.501745"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  48 -->
+
+	<!-- START PPT  49 -->
+	<spatrand>
+    <bound x="0.983281" y="0.983281" z="0.983281"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.491640"/>
+			<y value="-0.491640"/>
+			<z value="-0.491640"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.491640">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="2.588929"/>
+			<y value="-1.437946"/>
+			<z value="8.599678"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  49 -->
+
+	<!-- START PPT  50 -->
+	<spatrand>
+    <bound x="1.303376" y="1.303376" z="1.303376"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.651688"/>
+			<y value="-0.651688"/>
+			<z value="-0.651688"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.651688">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="11.987069"/>
+			<y value="17.538816"/>
+			<z value="-20.798345"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  50 -->
+
+	<!-- START PPT  51 -->
+	<spatrand>
+    <bound x="1.538825" y="1.538825" z="1.538825"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.769413"/>
+			<y value="-0.769413"/>
+			<z value="-0.769413"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.769413">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-10.912798"/>
+			<y value="-15.327677"/>
+			<z value="-4.407839"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  51 -->
+
+	<!-- START PPT  52 -->
+	<spatrand>
+    <bound x="0.596085" y="0.596085" z="0.596085"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.298042"/>
+			<y value="-0.298042"/>
+			<z value="-0.298042"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.298042">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-5.129141"/>
+			<y value="-8.317277"/>
+			<z value="-13.672861"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  52 -->
+
+	<!-- START PPT  53 -->
+	<spatrand>
+    <bound x="1.120264" y="1.120264" z="1.120264"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.560132"/>
+			<y value="-0.560132"/>
+			<z value="-0.560132"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.560132">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="16.759002"/>
+			<y value="-19.218795"/>
+			<z value="17.623311"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  53 -->
+
+	<!-- START PPT  54 -->
+	<spatrand>
+    <bound x="2.187987" y="2.187987" z="2.187987"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-1.093993"/>
+			<y value="-1.093993"/>
+			<z value="-1.093993"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="1.093993">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="8.529772"/>
+			<y value="-14.481226"/>
+			<z value="6.957582"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  54 -->
+
+	<!-- START PPT  55 -->
+	<spatrand>
+    <bound x="1.414060" y="1.414060" z="1.414060"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.707030"/>
+			<y value="-0.707030"/>
+			<z value="-0.707030"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.707030">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="0.945616"/>
+			<y value="-3.549585"/>
+			<z value="-17.361387"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  55 -->
+
+	<!-- START PPT  56 -->
+	<spatrand>
+    <bound x="1.644618" y="1.644618" z="1.644618"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.822309"/>
+			<y value="-0.822309"/>
+			<z value="-0.822309"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.822309">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-21.172513"/>
+			<y value="-14.200210"/>
+			<z value="5.512035"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  56 -->
+
+	<!-- START PPT  57 -->
+	<spatrand>
+    <bound x="1.124720" y="1.124720" z="1.124720"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.562360"/>
+			<y value="-0.562360"/>
+			<z value="-0.562360"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.562360">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="11.027933"/>
+			<y value="20.347312"/>
+			<z value="-11.510410"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  57 -->
+
+	<!-- START PPT  58 -->
+	<spatrand>
+    <bound x="1.298376" y="1.298376" z="1.298376"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.649188"/>
+			<y value="-0.649188"/>
+			<z value="-0.649188"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.649188">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-18.599314"/>
+			<y value="-13.183624"/>
+			<z value="-1.800408"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  58 -->
+
+	<!-- START PPT  59 -->
+	<spatrand>
+    <bound x="1.478842" y="1.478842" z="1.478842"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.739421"/>
+			<y value="-0.739421"/>
+			<z value="-0.739421"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.739421">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="17.860575"/>
+			<y value="-2.144382"/>
+			<z value="-8.618972"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  59 -->
+
+	<!-- START PPT  60 -->
+	<spatrand>
+    <bound x="0.570365" y="0.570365" z="0.570365"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.285182"/>
+			<y value="-0.285182"/>
+			<z value="-0.285182"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.285182">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="16.447159"/>
+			<y value="-17.394068"/>
+			<z value="-8.072217"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  60 -->
+
+	<!-- START PPT  61 -->
+	<spatrand>
+    <bound x="0.453668" y="0.453668" z="0.453668"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.226834"/>
+			<y value="-0.226834"/>
+			<z value="-0.226834"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.226834">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-15.223208"/>
+			<y value="-12.680727"/>
+			<z value="9.430512"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  61 -->
+
+	<!-- START PPT  62 -->
+	<spatrand>
+    <bound x="2.020247" y="2.020247" z="2.020247"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-1.010124"/>
+			<y value="-1.010124"/>
+			<z value="-1.010124"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="1.010124">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-0.256231"/>
+			<y value="0.943460"/>
+			<z value="-7.188010"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  62 -->
+
+	<!-- START PPT  63 -->
+	<spatrand>
+    <bound x="1.727889" y="1.727889" z="1.727889"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.863944"/>
+			<y value="-0.863944"/>
+			<z value="-0.863944"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.863944">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="0.090411"/>
+			<y value="12.422403"/>
+			<z value="-3.745451"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  63 -->
+
+	<!-- START PPT  64 -->
+	<spatrand>
+    <bound x="0.763363" y="0.763363" z="0.763363"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.381681"/>
+			<y value="-0.381681"/>
+			<z value="-0.381681"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.381681">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-15.313756"/>
+			<y value="13.626754"/>
+			<z value="-14.210643"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  64 -->
+
+	<!-- START PPT  65 -->
+	<spatrand>
+    <bound x="1.661084" y="1.661084" z="1.661084"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.830542"/>
+			<y value="-0.830542"/>
+			<z value="-0.830542"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.830542">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="14.329622"/>
+			<y value="10.811132"/>
+			<z value="-1.817007"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  65 -->
+
+	<!-- START PPT  66 -->
+	<spatrand>
+    <bound x="0.688599" y="0.688599" z="0.688599"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.344300"/>
+			<y value="-0.344300"/>
+			<z value="-0.344300"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.344300">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-14.338844"/>
+			<y value="-7.816026"/>
+			<z value="-15.631370"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  66 -->
+
+	<!-- START PPT  67 -->
+	<spatrand>
+    <bound x="1.544328" y="1.544328" z="1.544328"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.772164"/>
+			<y value="-0.772164"/>
+			<z value="-0.772164"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.772164">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-18.246328"/>
+			<y value="-7.248089"/>
+			<z value="-19.770146"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  67 -->
+
+	<!-- START PPT  68 -->
+	<spatrand>
+    <bound x="1.478618" y="1.478618" z="1.478618"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.739309"/>
+			<y value="-0.739309"/>
+			<z value="-0.739309"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.739309">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-3.089022"/>
+			<y value="-16.981357"/>
+			<z value="18.236196"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  68 -->
+
+	<!-- START PPT  69 -->
+	<spatrand>
+    <bound x="1.810200" y="1.810200" z="1.810200"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.905100"/>
+			<y value="-0.905100"/>
+			<z value="-0.905100"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.905100">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-3.293126"/>
+			<y value="-20.631089"/>
+			<z value="11.094384"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  69 -->
+
+	<!-- START PPT  70 -->
+	<spatrand>
+    <bound x="2.001115" y="2.001115" z="2.001115"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-1.000558"/>
+			<y value="-1.000558"/>
+			<z value="-1.000558"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="1.000558">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-10.865385"/>
+			<y value="-4.267382"/>
+			<z value="0.353435"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  70 -->
+
+	<!-- START PPT  71 -->
+	<spatrand>
+    <bound x="1.504820" y="1.504820" z="1.504820"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.752410"/>
+			<y value="-0.752410"/>
+			<z value="-0.752410"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.752410">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="9.583145"/>
+			<y value="18.736707"/>
+			<z value="-0.439975"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  71 -->
+
+	<!-- START PPT  72 -->
+	<spatrand>
+    <bound x="1.502388" y="1.502388" z="1.502388"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.751194"/>
+			<y value="-0.751194"/>
+			<z value="-0.751194"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.751194">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-1.449889"/>
+			<y value="21.091834"/>
+			<z value="2.209301"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  72 -->
+
+	<!-- START PPT  73 -->
+	<spatrand>
+    <bound x="1.115186" y="1.115186" z="1.115186"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.557593"/>
+			<y value="-0.557593"/>
+			<z value="-0.557593"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.557593">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="14.594115"/>
+			<y value="-14.131949"/>
+			<z value="-12.524518"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  73 -->
+
+	<!-- START PPT  74 -->
+	<spatrand>
+    <bound x="2.325829" y="2.325829" z="2.325829"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-1.162915"/>
+			<y value="-1.162915"/>
+			<z value="-1.162915"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="1.162915">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="1.926561"/>
+			<y value="-9.074483"/>
+			<z value="6.880516"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  74 -->
+
+	<!-- START PPT  75 -->
+	<spatrand>
+    <bound x="1.480677" y="1.480677" z="1.480677"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.740338"/>
+			<y value="-0.740338"/>
+			<z value="-0.740338"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.740338">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-12.264164"/>
+			<y value="0.089091"/>
+			<z value="19.303176"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  75 -->
+
+	<!-- START PPT  76 -->
+	<spatrand>
+    <bound x="1.524543" y="1.524543" z="1.524543"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.762272"/>
+			<y value="-0.762272"/>
+			<z value="-0.762272"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.762272">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="20.923243"/>
+			<y value="13.667060"/>
+			<z value="-10.363362"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  76 -->
+
+	<!-- START PPT  77 -->
+	<spatrand>
+    <bound x="0.678273" y="0.678273" z="0.678273"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.339137"/>
+			<y value="-0.339137"/>
+			<z value="-0.339137"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.339137">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-10.194920"/>
+			<y value="14.732127"/>
+			<z value="11.196040"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  77 -->
+
+	<!-- START PPT  78 -->
+	<spatrand>
+    <bound x="1.650422" y="1.650422" z="1.650422"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.825211"/>
+			<y value="-0.825211"/>
+			<z value="-0.825211"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.825211">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="11.391443"/>
+			<y value="-9.591681"/>
+			<z value="2.663230"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  78 -->
+
+	<!-- START PPT  79 -->
+	<spatrand>
+    <bound x="1.226714" y="1.226714" z="1.226714"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.613357"/>
+			<y value="-0.613357"/>
+			<z value="-0.613357"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.613357">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="3.889225"/>
+			<y value="15.024510"/>
+			<z value="-15.175820"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  79 -->
+
+	<!-- START PPT  80 -->
+	<spatrand>
+    <bound x="1.460408" y="1.460408" z="1.460408"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.730204"/>
+			<y value="-0.730204"/>
+			<z value="-0.730204"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.730204">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-3.143027"/>
+			<y value="-1.793867"/>
+			<z value="-12.602394"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  80 -->
+
+	<!-- START PPT  81 -->
+	<spatrand>
+    <bound x="0.288238" y="0.288238" z="0.288238"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.144119"/>
+			<y value="-0.144119"/>
+			<z value="-0.144119"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.144119">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-11.302024"/>
+			<y value="4.827763"/>
+			<z value="-14.325596"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  81 -->
+
+	<!-- START PPT  82 -->
+	<spatrand>
+    <bound x="1.326936" y="1.326936" z="1.326936"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.663468"/>
+			<y value="-0.663468"/>
+			<z value="-0.663468"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.663468">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-0.987285"/>
+			<y value="-10.671728"/>
+			<z value="-16.475565"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  82 -->
+
+	<!-- START PPT  83 -->
+	<spatrand>
+    <bound x="2.107202" y="2.107202" z="2.107202"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-1.053601"/>
+			<y value="-1.053601"/>
+			<z value="-1.053601"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="1.053601">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-7.964848"/>
+			<y value="17.360497"/>
+			<z value="-0.489283"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  83 -->
+
+	<!-- START PPT  84 -->
+	<spatrand>
+    <bound x="2.347854" y="2.347854" z="2.347854"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-1.173927"/>
+			<y value="-1.173927"/>
+			<z value="-1.173927"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="1.173927">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="17.934223"/>
+			<y value="-13.134047"/>
+			<z value="18.544575"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  84 -->
+
+	<!-- START PPT  85 -->
+	<spatrand>
+    <bound x="1.246662" y="1.246662" z="1.246662"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.623331"/>
+			<y value="-0.623331"/>
+			<z value="-0.623331"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.623331">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="2.183695"/>
+			<y value="2.525823"/>
+			<z value="-6.414783"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  85 -->
+
+	<!-- START PPT  86 -->
+	<spatrand>
+    <bound x="0.478953" y="0.478953" z="0.478953"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.239476"/>
+			<y value="-0.239476"/>
+			<z value="-0.239476"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.239476">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-6.000145"/>
+			<y value="-1.437779"/>
+			<z value="-7.906139"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  86 -->
+
+	<!-- START PPT  87 -->
+	<spatrand>
+    <bound x="1.487114" y="1.487114" z="1.487114"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.743557"/>
+			<y value="-0.743557"/>
+			<z value="-0.743557"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.743557">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="2.057013"/>
+			<y value="-14.007383"/>
+			<z value="1.523402"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  87 -->
+
+	<!-- START PPT  88 -->
+	<spatrand>
+    <bound x="0.742028" y="0.742028" z="0.742028"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.371014"/>
+			<y value="-0.371014"/>
+			<z value="-0.371014"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.371014">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="20.028891"/>
+			<y value="-0.816043"/>
+			<z value="-16.608807"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  88 -->
+
+	<!-- START PPT  89 -->
+	<spatrand>
+    <bound x="0.964941" y="0.964941" z="0.964941"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.482470"/>
+			<y value="-0.482470"/>
+			<z value="-0.482470"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.482470">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-1.658313"/>
+			<y value="-4.066111"/>
+			<z value="-7.267726"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  89 -->
+
+	<!-- START PPT  90 -->
+	<spatrand>
+    <bound x="1.831768" y="1.831768" z="1.831768"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.915884"/>
+			<y value="-0.915884"/>
+			<z value="-0.915884"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.915884">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-10.703425"/>
+			<y value="-15.081465"/>
+			<z value="-1.535705"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  90 -->
+
+	<!-- START PPT  91 -->
+	<spatrand>
+    <bound x="1.847098" y="1.847098" z="1.847098"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.923549"/>
+			<y value="-0.923549"/>
+			<z value="-0.923549"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.923549">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-1.790795"/>
+			<y value="10.059858"/>
+			<z value="2.213511"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  91 -->
+
+	<!-- START PPT  92 -->
+	<spatrand>
+    <bound x="1.515800" y="1.515800" z="1.515800"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.757900"/>
+			<y value="-0.757900"/>
+			<z value="-0.757900"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.757900">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-2.768778"/>
+			<y value="-20.878374"/>
+			<z value="3.461956"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  92 -->
+
+	<!-- START PPT  93 -->
+	<spatrand>
+    <bound x="0.516591" y="0.516591" z="0.516591"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.258295"/>
+			<y value="-0.258295"/>
+			<z value="-0.258295"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.258295">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-8.024455"/>
+			<y value="-6.306062"/>
+			<z value="-7.884023"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  93 -->
+
+	<!-- START PPT  94 -->
+	<spatrand>
+    <bound x="1.362444" y="1.362444" z="1.362444"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.681222"/>
+			<y value="-0.681222"/>
+			<z value="-0.681222"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.681222">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="7.365058"/>
+			<y value="3.858676"/>
+			<z value="-12.583325"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  94 -->
+
+	<!-- START PPT  95 -->
+	<spatrand>
+    <bound x="0.673619" y="0.673619" z="0.673619"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.336810"/>
+			<y value="-0.336810"/>
+			<z value="-0.336810"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.336810">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="19.376342"/>
+			<y value="-5.534700"/>
+			<z value="17.390643"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  95 -->
+
+	<!-- START PPT  96 -->
+	<spatrand>
+    <bound x="1.886468" y="1.886468" z="1.886468"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.943234"/>
+			<y value="-0.943234"/>
+			<z value="-0.943234"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.943234">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-5.394129"/>
+			<y value="13.891676"/>
+			<z value="-16.011785"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  96 -->
+
+	<!-- START PPT  97 -->
+	<spatrand>
+    <bound x="1.855566" y="1.855566" z="1.855566"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.927783"/>
+			<y value="-0.927783"/>
+			<z value="-0.927783"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.927783">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="15.008943"/>
+			<y value="18.191629"/>
+			<z value="-14.149540"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  97 -->
+
+	<!-- START PPT  98 -->
+	<spatrand>
+    <bound x="1.072610" y="1.072610" z="1.072610"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.536305"/>
+			<y value="-0.536305"/>
+			<z value="-0.536305"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.536305">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="4.447936"/>
+			<y value="-1.027892"/>
+			<z value="10.992898"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  98 -->
+
+	<!-- START PPT  99 -->
+	<spatrand>
+    <bound x="1.204782" y="1.204782" z="1.204782"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.602391"/>
+			<y value="-0.602391"/>
+			<z value="-0.602391"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.602391">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="-16.472718"/>
+			<y value="-11.000252"/>
+			<z value="12.918226"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  99 -->
+
+	<!-- START PPT  100 -->
+	<spatrand>
+    <bound x="1.664967" y="1.664967" z="1.664967"/>
+		<density value="30.000"/>
+
+		<atom index="(000)" mass="1.000000"/>
+		<count value="0.500000"/>
+		<atom index="(000)" mass="2.000000"/>
+		<count value="0.500000"/>
+	</spatrand> 
+	<geotransform>
+		<translate>
+			<x value="-0.832484"/>
+			<y value="-0.832484"/>
+			<z value="-0.832484"/>
+		</translate>
+	</geotransform>
+	<clip>
+		<sphere radius="0.832484">
+			<x value="0"/>
+			<y value="0"/>
+			<z value="0"/>
+		</sphere>
+	</clip>
+	<geotransform>
+		<translate>
+			<x value="16.141285"/>
+			<y value="-20.244409"/>
+			<z value="-20.574014"/>
+		</translate>
+	</geotransform>
+	        <recall name="running_dataset"/>
+	        <store name="running_dataset" clear="true" forceram="true"/>
+	<!-- END PPT  100 -->
+
+	<!-- restore the running dataset -->
+	<recall name="running_dataset"/>
+
+	<!-- clip to the bounding box -->
+	<clip>
+		<box>
+			<x value="-20.000000"/>
+			<y value="-20.000000"/>
+			<z value="-20.000000"/>
+			<x value="20.000000"/>
+			<y value="20.000000"/>
+			<z value="20.000000"/>
+		</box>
+	</clip>
+
+	<possave file="posgenpyTest_hard.pos"/>
+
+</posscript>
