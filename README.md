@@ -50,6 +50,7 @@ Useful hints for using WSL:
 3. Example files for python for libatomprobe example folder.
 4. James (and Andy) to write up Word doc for XML file generator as functions, and upload to github.
 5. Peter to push his posfile relabelling jupyter notebook to github.
+6. Andy to provide XML file which generates a "test" pos file using posgen which everyone can use.
 
 ### 01/05/20
 1. Peter: <br>
