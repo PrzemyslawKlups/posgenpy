@@ -14,13 +14,13 @@ def write_xml_with_relabelling(xmlFileName: str,
                                bulkIons: string_vector,
                                relabelled_runs: int,
                                destination_folder="",
-                               dclassify="0.0",
-                               knn="1",
-                               dmax="0.5",
-                               dbulk="0.2",
-                               derode="0.2",
-                               nmin="2",
-                               nmax="-1",
+                               dclassify=0.0,
+                               knn=1,
+                               dmax=0.5,
+                               dbulk=0.2,
+                               derode=0.2,
+                               nminV=2,
+                               nmaxV=-1,
                                includeUnrangedPos=True,
                                includeUnrangedStats=True,
                                clusterstatsCore=True,
@@ -68,10 +68,10 @@ def write_xml_with_relabelling(xmlFileName: str,
 
     cluster = etree.SubElement(root, "cluster")
     algorithm = etree.SubElement(cluster, "algorithm", value="maxsep")
-    algorithm.append(etree.Element("dclassify", value=dclassify, knn=knn))
-    algorithm.append(etree.Element("dmax", value=dmax))
-    algorithm.append(etree.Element("dbulk", value=dbulk))
-    algorithm.append(etree.Element("derode", value=derode))
+    algorithm.append(etree.Element("dclassify", value=str(dclassify), knn=str(knn)))
+    algorithm.append(etree.Element("dmax", value=str(dmax)))
+    algorithm.append(etree.Element("dbulk", value=str(dbulk)))
+    algorithm.append(etree.Element("derode", value=str(derode)))
 
     # insert range file path
     cluster.append(etree.Element("range", file=rangeFile))
@@ -88,7 +88,7 @@ def write_xml_with_relabelling(xmlFileName: str,
     for bulkIon in bulkIons:
         typelist.append(etree.Element("atomtype", symbol=bulkIon))
 
-    cluster.append(etree.Element("sizeclip", nmin=nmin, nmax=nmax))
+    cluster.append(etree.Element("sizeclip", nmin=str(nminV), nmax=str(nmaxV)))
 
     # switch if unranged ions are required in either/both of the POS output or stats
     if includeUnrangedPos or includeUnrangedStats:
@@ -130,10 +130,10 @@ def write_xml_with_relabelling(xmlFileName: str,
 
         cluster = etree.SubElement(root, "cluster")
         algorithm = etree.SubElement(cluster, "algorithm", value="maxsep")
-        algorithm.append(etree.Element("dclassify", value=dclassify, knn=knn))
-        algorithm.append(etree.Element("dmax", value=dmax))
-        algorithm.append(etree.Element("dbulk", value=dbulk))
-        algorithm.append(etree.Element("derode", value=derode))
+        algorithm.append(etree.Element("dclassify", value=str(dclassify), knn=str(knn)))
+        algorithm.append(etree.Element("dmax", value=str(dmax)))
+        algorithm.append(etree.Element("dbulk", value=str(dbulk)))
+        algorithm.append(etree.Element("derode", value=str(derode)))
 
         # insert range file path
         cluster.append(etree.Element("range", file=rangeFile))
@@ -150,7 +150,7 @@ def write_xml_with_relabelling(xmlFileName: str,
         for bulkIon in bulkIons:
             typelist.append(etree.Element("atomtype", symbol=bulkIon))
 
-        cluster.append(etree.Element("sizeclip", nmin=nmin, nmax=nmax))
+        cluster.append(etree.Element("sizeclip", nmin=str(nminV), nmax=str(nmaxV)))
 
         # switch if unranged ions are required in either/both of the POS output or stats
         # if includeUnrangedPos or includeUnrangedStats:
