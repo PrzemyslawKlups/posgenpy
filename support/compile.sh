@@ -16,6 +16,9 @@ sudo apt-get install build-essential cmake mercurial python3-dev swig || { echo 
 #Install actual depdendencies
 sudo apt-get install libxml2-dev libgsl-dev libqhull-dev libmuparser-dev
 
+#install depdendencies in notebooks
+sudo apt-get install python3-pandas
+
 #Download and compile libatomprobe
 #=====
 CLONEURL=https://hg.sr.ht/~mycae/libatomprobe
