@@ -29,7 +29,7 @@ cd libatomprobe/
 patch -p1 < packaging/debian/patches/enable-swig.patch 
 
 cmake . || { echo "Makefile generation failed. Aborting"; exit 1 ; }
-make -j2  || { echo "library compilation failed. Aborting"; exit 1 ; }
+make  || { echo "library compilation failed. Aborting"; exit 1 ; }
 
 #install library
 sudo make install
