@@ -17,7 +17,7 @@ sudo apt-get install build-essential cmake mercurial python3-dev swig || { echo 
 sudo apt-get install libxml2-dev libgsl-dev libqhull-dev libmuparser-dev
 
 #install depdendencies in notebooks
-sudo apt-get install python3-pandas
+sudo apt-get install python3-pandas jupyter-notebook
 
 #Download and compile libatomprobe
 #=====
