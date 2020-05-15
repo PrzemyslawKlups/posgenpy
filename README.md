@@ -17,19 +17,18 @@ under Windows, in a "native" way. libatomprobe can be used in this way,
 including with python support
 
 To install WSL, follow these instructions, entering commands in WSL
-* Install  WSL and Ubuntu App 
+* Install  WSL and Ubuntu App :
     Go to this URL : https://docs.microsoft.com/en-us/windows/wsl/install-win10
-* (optional) Update Python (run command from inside WSL)
-    > ```$ sudo apt-get update && sudo apt-get upgrade && sudo apt-get install python3```
-* Install dependencies (run command from inside WSL)
-    > ```sudo apt-get update && sudo apt-get upgrade && sudo apt-get install libgsl-dev libqhull-dev libxml2-dev g++ cmake swig```
-* (optional) Enable python support in libatomprobe
-    - In CMakeLists.txt, change "set(ENABLE_SWIG no)" to "set(ENABLE_SWIG yes)"
-* From libatomprobe/ directory, run: 
-   > ```$ cmake .```
-   > ```$ make```
-   > ```$ sudo make install```
-    
+* Install git:
+   sudo apt install git
+* Inside WSL, check out this repository:
+   git clone ssh://git@github.com/PrzemyslawKlups/posgenpy.git
+* Run the support/compile.sh script, to install all dependencies:
+  cd posgenpy
+  ./support/compile.sh
+* Run the example with :
+  jupyter-notebook "Plotting real vs random clusters and more.ipynb"
+ 
 Useful hints for using WSL: 
 * paste text into the terminal using right-click (ctrl+v does not work)
 * to access files from Windows drives change ```C:\...``` into ```/mnt/c/```. Remember to change all backslashes to 
