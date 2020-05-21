@@ -64,8 +64,8 @@ wget "$VCXSRV" || { echo "Downloading VCXSRV failed... Skipping. IF you want a U
 #This bit is to allow UI connections to work.
 # You need to install an X11 server, such as vcxsrv
 #Add Entry for X11 connection
-echo "DISPLAY=:0.0" >>~/.bashrc
-echo "export DISPLAY" >> ~/.bashrc
+echo "export DISPLAY=$(awk '/nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null):0" >> ~/.bashrc
+echo "export LIBGL_ALWAYS_INDIRECT=1" >> ~/.bashrc
 
 source ~/.bashrc
 
@@ -77,4 +77,8 @@ else
 	echo "Auto DL failed : Please manually download and install vcxsrv: https://sourceforge.net/projects/vcxsrv/ "
 fi
 
+
+echo "If using WSL2, and you wish to use graphical programs, Please run :"
+echo "\tSet-NetFirewallProfile -DisabledInterfaceAliases 'vEthernet (WSL)' "
+echo " from a windows powershell prompt. You may need to redo this for each reboot"
 
