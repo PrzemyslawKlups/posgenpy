@@ -46,7 +46,7 @@ hg clone $POSGEN_CLONE posgen || { echo "Failed to download posgen source code. 
 
 cd posgen
 
-make || { echo "Failed to build posgen. Aborting" ; exit 1 ; } 
+make parallel || { echo "Failed to build posgen. Aborting" ; exit 1 ; } 
 sudo make install || {echo "Failed to install posgen. Aborting" ; exit 1 ; }
 
 cd ..
