@@ -13,31 +13,34 @@ integer_vector = List[int]
 float_vector = List[float]
 
 
-def write_xml_with_relabelling(xmlFileName: str,
-                               posFile: str,
-                               rangeFile: str,
-                               coreIons: string_vector,
-                               bulkIons: string_vector,
-                               relabelled_runs: int,
-                               destination_folder="",
-                               dclassify=0.0,
-                               knn=1,
-                               dmax=0.5,
-                               dbulk=0.2,
-                               derode=0.2,
-                               nminV=2,
-                               nmaxV=-1,
-                               includeUnrangedPos=True,
-                               includeUnrangedStats=True,
-                               clusterstatsCore=True,
-                               clusterstatsBulk=True,
-                               clusterstatsPercluster=True,
-                               clusterstatsFile="cluster-stats.txt",
-                               unclusterstatsFile="unclustered-stats.txt",
-                               sizedistFile="sizedist.txt",
-                               clusteredPosFile="cluster.pos",
-                               unclusteredPosFile="unclustered.pos",
-                               clusterIDPosFile="clusterID.pos"):
+def write_xml_with_relabelling(
+        xmlFileName: str,
+        posFile: str,
+        rangeFile: str,
+        coreIons: string_vector,
+        bulkIons: string_vector,
+        relabelled_runs: int,
+        destination_folder="",
+        dclassify=0.0,
+        knn=1,
+        dmax=0.5,
+        dbulk=0.2,
+        derode=0.2,
+        nminV=2,
+        nmaxV=-1,
+        includeUnrangedPos=True,
+        includeUnrangedStats=True,
+        clusterstatsCore=True,
+        clusterstatsBulk=True,
+        clusterstatsPercluster=True,
+        clusterstatsFile="cluster-stats.txt",
+        unclusterstatsFile="unclustered-stats.txt",
+        sizedistFile="sizedist.txt",
+        clusteredPosFile="cluster.pos",
+        unclusteredPosFile="unclustered.pos",
+        clusterIDPosFile="clusterID.pos",
+        dtd_file_location=""
+):
     """
     # TODO write some documentation
     Function to write an XML file to perform max-sep clustering on a pos file.
@@ -186,11 +189,13 @@ def write_xml_with_relabelling(xmlFileName: str,
     # write XML file
     tree = root.getroottree()
     tree.write(f"{destination_folder}{xmlFileName}.xml",
-               doctype="<!DOCTYPE posscript SYSTEM \"posscript.dtd\">",
+               doctype=f"<!DOCTYPE posscript SYSTEM \"{dtd_file_location}posscript.dtd\">",
                pretty_print=True)
 
     return tree
 
+
+# TODO: fix this xml_for_msm_with_relabelling.py:310: RuntimeWarning: invalid value encountered in true_divide y_values = (real_local - random_local) / real_local
 
 def prepare_data_for_real_random_graphs(
         swept_parameters: float_vector,
@@ -310,9 +315,9 @@ def plot_real_cluster_ratio_across_swept_param(
         ax.plot(parameter_local, y_values, 'o-', color=colors[i], label="$N_{min}=%s$" % (n), alpha=0.6)
 
     # adjust the plot
-    ax.set_xlabel(f"{swept_parameter_name}")
+    ax.set_xlabel(swept_parameter_name)
     ax.set_ylabel("$(N_{real}-N_{rand})/N_{real}$")
-    ax.plot([min(swept_parameters), max(swept_parameters)], [threshold, threshold], 'r-', label=f"{threshold*100}%")
+    ax.plot([min(swept_parameters), max(swept_parameters)], [threshold, threshold], 'r-', label=f"{round(threshold*100)}%")
     ax.legend(bbox_to_anchor=(1.05, 1))
     ax.grid()
     # ax.xlim(left=0)
@@ -378,13 +383,13 @@ def plot_real_clusters_across_swept_param(
         ax.plot(parameter_local, real_local, 'o-', color=colors[i], label="$N_{min}=%s$" % (n), alpha=0.6)
 
     # adjust the plot
-    ax.set_xlabel(f"{swept_parameter_name}")
+    ax.set_xlabel(swept_parameter_name)
     ax.set_ylabel("Real clusters")
     ax.legend(bbox_to_anchor=(1.3, 1))
     ax.grid()
     # ax.set_xlim(left=0)
     # ax.set_ylim(top=1.1)
-    ax.set_title(f"Real Clusters and {swept_parameter_name} Values")
+    ax.set_title("Real Clusters and %s Values" % swept_parameter_name)
 
     # skip plt.show() if run in jupyter notebook
     if "JPY_PARENT_PID" in os.environ:
@@ -545,11 +550,11 @@ def plot_cluster_composition_across_swept_param_absolute(
     # adjust the plot
     ax.set_xlabel(swept_parameter_name)
     ax.set_ylabel("Cluster composition [at.%]")
-    ax.legend(bbox_to_anchor=(1.05, 1))
+    ax.legend(bbox_to_anchor=(1.10, 1))
     ax.grid()
     # ax.set_xlim(left=0)
     # ax.set_ylim(top=1.1)
-    ax.set_title(f"Absolute Cluster Composition and {swept_parameter_name} Values")
+    ax.set_title(f"Absolute Cluster Composition and %s Values" % swept_parameter_name)
 
     # skip plt.show() if run in jupyter notebook
     if "JPY_PARENT_PID" in os.environ:
@@ -604,12 +609,21 @@ def plot_cluster_composition_across_swept_param_relative(
     # find the total sum of all core ions for a given d_max
     for swept_parameter in core_ions_sum:
         core_ions_sum[swept_parameter] = numpy.array(core_ions_sum[swept_parameter]).sum()
-    
+
     # the same graph but stacked bars
     # calculate relative composition of core ions in the clusters and plot them
     next_values = None
     fig = plt.figure(figsize=(9, 5))
     ax = fig.add_axes([0.15, 0.3, 0.5, 0.6])
+
+    # set a clear width of the columns depending on the swept parameters
+    diff = numpy.zeros(len(swept_parameters)-1)
+    if len(swept_parameters) > 1:
+        for i in range(len(swept_parameters)-1):
+            diff[i] = numpy.abs(swept_parameters[i] - swept_parameters[i+1])
+        column_width = diff.mean() * 0.75
+    else:
+        column_width = 0.75
 
     for i, ion in enumerate(core_ions):
         x_values = []
@@ -627,7 +641,7 @@ def plot_cluster_composition_across_swept_param_relative(
         else:
             y_values_bar = next_values
 
-        ax.bar(x_values, y_values_bar, alpha=1, label=ion, width=0.75)
+        ax.bar(x_values, y_values_bar, alpha=1, label=ion, width=column_width)
         next_values = y_values_bar - y_values
 
     # adjust the plot
@@ -637,7 +651,7 @@ def plot_cluster_composition_across_swept_param_relative(
     # ax.grid()
     # ax.set_xlim(left=0)
     # ax.set_ylim(top=1.1)
-    ax.set_title(f"Relative Cluster Composition and {swept_parameter_name} Values")
+    ax.set_title(f"Relative Cluster Composition and %s Values" % swept_parameter_name)
 
     # skip plt.show() if run in jupyter notebook
     if "JPY_PARENT_PID" in os.environ:
