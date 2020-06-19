@@ -10,6 +10,8 @@ if [ -d posgen ] ; then
 	exit 1;
 fi
 
+sudo apt-get update || { echo " Failed to update software list - internet OK?" ; exit 1 ; }
+
 #Install build dependencies
 sudo apt-get install build-essential cmake mercurial python3-dev swig || { echo "Failed to download libraries. Aborting."; exit 1 ; }
 
