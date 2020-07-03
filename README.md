@@ -7,6 +7,7 @@ including with python support
 To install WSL, follow these instructions, entering commands in WSL
 * Install  WSL and Ubuntu App :
     Go to this URL : https://docs.microsoft.com/en-us/windows/wsl/install-win10
+
 Run the following commands inside Ubuntu App:
 * Install git:
    ```sudo apt install git```
