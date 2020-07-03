@@ -1,12 +1,13 @@
 ## Installation of libatomprobe for Windows Subsystem for Linux (WSL)
 
-WSL is a light-weight virtuaisation system for running linux applications
+WSL is a light-weight virtualisation system for running linux applications
 under Windows, in a "native" way. libatomprobe can be used in this way,
 including with python support
 
 To install WSL, follow these instructions, entering commands in WSL
 * Install  WSL and Ubuntu App :
     Go to this URL : https://docs.microsoft.com/en-us/windows/wsl/install-win10
+Run the following commands inside Ubuntu App:
 * Install git:
    ```sudo apt install git```
 * Inside WSL, check out this repository:
