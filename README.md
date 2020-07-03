@@ -1,15 +1,3 @@
-# posgenpy
-Python-based driver for cluster analysis using [posgen](http://apttools.sourceforge.net). These tools are to help make analysis by [posgen](http://apttools.sourceforge.net) easier.
-## Installation 
-Installation
-1.	Install Anaconda (https://www.anaconda.com/products/individual). This will give you access to Python, Jupyter notebooks and other useful packages.
-2.	Install posgen (https://sourceforge.net/projects/apttools/files/posgen/0.0.3/) 
-3.	Install GitHub Desktop (https://desktop.github.com/)
-4.	Clone the posgenpy repo from GitHub to your local computer so that it can be used in GitHub Desktop
-5.	Run the support/compile.sh script to download and compile libatomprobe
-6.	Open Anaconda Navigator and then launch jupyter notebook
-7.	Within jupyter notebook, navigate to your GitHub folder and open ‘Posgen test.ipynb’
-
 ## Installation of libatomprobe for Windows Subsystem for Linux (WSL)
 
 WSL is a light-weight virtuaisation system for running linux applications
@@ -20,12 +8,11 @@ To install WSL, follow these instructions, entering commands in WSL
 * Install  WSL and Ubuntu App :
     Go to this URL : https://docs.microsoft.com/en-us/windows/wsl/install-win10
 * Install git:
-   sudo apt install git
+   ```sudo apt install git```
 * Inside WSL, check out this repository:
-   git clone ssh://git@github.com/PrzemyslawKlups/posgenpy.git
+   ```git clone https://github.com/PrzemyslawKlups/posgenpy.git```
 * Run the support/compile.sh script, to install all dependencies:
-  cd posgenpy
-  ./support/compile.sh
+  first type ```$ cd posgenpy``` and then ```$ sh ./support/compile.sh```
 * Run the example with :
   jupyter-notebook "Plotting real vs random clusters and more.ipynb"
  
@@ -41,6 +28,18 @@ Useful hints for using WSL:
     * now the data is accessable from ```/mnt/d```
     * safely unmount the drive at the end of the session 
         > ```$ sudo umount /mnt/d```
+
+# posgenpy
+Python-based driver for cluster analysis using [posgen](http://apttools.sourceforge.net). These tools are to help make analysis by [posgen](http://apttools.sourceforge.net) easier.
+## Installation 
+Installation
+1.	Install Anaconda (https://www.anaconda.com/products/individual). This will give you access to Python, Jupyter notebooks and other useful packages.
+2.	Install posgen (https://sourceforge.net/projects/apttools/files/posgen/0.0.3/) 
+3.	Install GitHub Desktop (https://desktop.github.com/)
+4.	Clone the posgenpy repo from GitHub to your local computer so that it can be used in GitHub Desktop
+5.	Run the support/compile.sh script to download and compile libatomprobe
+6.	Open Anaconda Navigator and then launch jupyter notebook
+7.	Within jupyter notebook, navigate to your GitHub folder and open ‘Posgen test.ipynb’
 
 ## To do
 ### 07/05/20
