@@ -31,71 +31,13 @@ Useful hints for using WSL:
     * safely unmount the drive at the end of the session 
         > ```$ sudo umount /mnt/d```
 
-# posgenpy
+# PosgenPy
 Python-based driver for cluster analysis using [posgen](http://apttools.sourceforge.net). These tools are to help make analysis by [posgen](http://apttools.sourceforge.net) easier.
-## Installation 
-Installation
-1.	Install Anaconda (https://www.anaconda.com/products/individual). This will give you access to Python, Jupyter notebooks and other useful packages.
-2.	Install posgen (https://sourceforge.net/projects/apttools/files/posgen/0.0.3/) 
-3.	Install GitHub Desktop (https://desktop.github.com/)
-4.	Clone the posgenpy repo from GitHub to your local computer so that it can be used in GitHub Desktop
-5.	Run the support/compile.sh script to download and compile libatomprobe
-6.	Open Anaconda Navigator and then launch jupyter notebook
-7.	Within jupyter notebook, navigate to your GitHub folder and open ‘Posgen test.ipynb’
 
-## To do
-### 07/05/20
-1. Peter to write up instructions for WSL install. Include copy/paste instructions for Linux WSL, and instructions for mounting external drive.
-2. Jupyter notebook examples for libatomprobe.
-3. Example files for python for libatomprobe example folder.
-4. James (and Andy) to write up Word doc for XML file generator as functions, and upload to github.
-5. Peter to push his posfile relabelling jupyter notebook to github.
-6. Andy to provide XML file which generates a "test" pos file using posgen which everyone can use.
-
-### 01/05/20
-1. Peter: <br>
-1.1 Investigate WSL further <br>
-1.2 Parameter selection function: build on random relabelling work, with focus on data visualisation, to recreate graphs from Williams2013 paper (dx.doi.org/10.1016/j.ultramic.2012.12.011). Include 95% confidence intervals on plots.
-2. James and Andy: multiple cluster options per XML file, so that .pos file only has to be loaded once
-3. Hazel: investigate subprocess module (Popen) to get live terminal output using python (completed by Andy, Andy to push to github)
-
-#### Other thoughts
-1. Pole removal feature
-2. Initial coarse parameter sweep to be followed by fine parameter sweep for cluster searching
-3. Options other than grid-based parameter searching do exist, and may be faster
-
-
-### 27/04/20
-1. Investigate using Windows Subsytem for Linux (WSL) to simplify install and facilitate compatibility with libatomprobe (Peter to look into this)
-2.	Posgen output file reader, cluster-stats and size distribution (?who)
-3.	Range file reader (will specify all core and bulk ions for now and come back to this, may not need if we go with libatomprobe)
-4.	XML generator (Andy and James F working on this, **prototype working 29/4/20**)
-5.	Sweep Nmin, Dmax, Order, L, E (James F working on this, already has ideas outline, will be mainly XML)
-5.1.	Output graph (Dmax vs Nmin vs cluster count etc.) 
-5.2.	Output cluster composition, sizes, number
-6.	Random mass re-labeller (that is actually random!) (Peter is working on this)
-6.1.	Compare results to this randomised set 
-6.2.	Perform statistical tests
-7.	Analyse multiple .pos files at once to generate matrix/cluster files (batch analysis) (Hazel to work on this)
-8.	Run simulation to check output of cluster search:
-8.1.	Grab composition from existing file or provide one
-8.2.	For a given box and number of cluster density (could be estimated from existing data), generate a random distribution of clusters of specific size distribution. This gives a “ground truth” which any subsequent searches can be checked against
-8.3.	Run clustering on the simulated data and compare against true values:
-8.3.1.	Where are the clusters detected? 
-8.3.2.	Were the right number detected? 
-8.3.3.	Did they have the correct composition? 
-8.4.	Were the ions classified correctly, TT/TF/FT/FF truth table?
-9.	Reading cluster stats files
-10.	Assist in easier use of posgen (e.g. adding bulk ions from range file) 
-11.	Nearest neighbour plot of cluster centres to minimise artificial joining/ splitting up of clusters 
-11.1.	Tool which can allow you to separate joined clusters
-12.	Edge cluster identification and removal from composition/size calculations 
-13.	Morphology plots 
-14.	Local concentration filtering 
-15.	Other statistical tests, such as: 
-15.1.	Is cluster composition uniform? 
-15.2.	Is the composition of a species in a cluster significantly above matrix level?
-
+# How to use PosgenPy
+To make it easier and more transparent for you to analyse your clusters, we created some Jupyter Notebook files in which you can see our examples, tweak them according to your preference or insert path files to your `pos` and `rrng` files and use it directly on your data.
+We recommend starting from `Plotting real vs random clusters and more.ipynb`. In this notebook, you will be able to run an analysis on your data by substituting file paths and adjusting parameters if required.
+If you would like to see how the improved method for random relabelling is done, go to `Cluster Analysis with Truly Random Relabelling.ipynb`.
 
 ## Overview
 General description of different functions.
@@ -141,3 +83,4 @@ Low-level: Borrowed from [AtomProbeLab](http://AtomProbeLab.sourceforge.net) to 
 High-level: An early script which includes composition cropping as well as Nmin cropping of data.
 
 # Authors
+PosgenPy was created by Dan Hayley, Andy London, James Famelton, Hazel Gardner, and Przemek Klups.
