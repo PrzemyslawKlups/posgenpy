@@ -1,6 +1,0 @@
-<!DOCTYPE posscript SYSTEM "posscript.dtd">
-<posscript>
-	<version value="0.0.1"/>
-	<posload file="C:\Users\James\Documents\NetBeansProjects\AA6008_iT7_1_R5083_07423\recons\recon-v02\R5083_07423-v02-roi-no-Cu-tips\R5083_07423-v02-roi-no-Cu-tips-alpha-dmax-0.9-Nmin-17-split.cluster.indexed.pos"/>
-	<composition rangefile="C:\Users\James\Documents\NetBeansProjects\AA6008_iT7_1_R5083_07423\recons\recon-v02\R5083_07423-v02-roi-no-Cu-tips\R5083_07423-v02-alpha.rrng" perrange ="false" backmode="0" normalised="0"/>
-</posscript>
