@@ -34,15 +34,15 @@ Useful hints for using WSL:
 # PosgenPy
 Python-based driver for cluster analysis using [posgen](http://apttools.sourceforge.net). These tools are to help make analysis by [posgen](http://apttools.sourceforge.net) easier.
 
-# How to use PosgenPy
+## How to use PosgenPy
 To make it easier and more transparent for you to analyse your clusters, we created some Jupyter Notebook files in which you can see our examples, tweak them according to your preference or insert path files to your `pos` and `rrng` files and use it directly on your data.
-We recommend starting from `Plotting real vs random clusters and more.ipynb`. In this notebook, you will be able to run an analysis on your data by substituting file paths and adjusting parameters if required.
-If you would like to see how the improved method for random relabelling is done, go to `Cluster Analysis with Truly Random Relabelling.ipynb`.
+We recommend starting from `Quick_Parameter_Check.ipynb`. In this notebook, you will be able to run an analysis on your data by substituting file paths and adjusting parameters if required.
 
 ## Overview
 General description of different functions.
 
-**writeClusterXML** Function to write an XML file that is read by `posgen` to perform max-sep clustering on a `pos` file.
+**write_xml_with_relabelling** Function to write an XML file that is read by `posgen` to perform max-sep clustering on a `pos` file. It includes relabelling function which helps with estimating the number of real clusters in the data.
+
 
 ## Terms
 **posgen** - an XML driven C++ executable which can do lots of pos-operations including generating simulated data and cluster analysis
