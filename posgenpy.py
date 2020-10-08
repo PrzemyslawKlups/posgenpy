@@ -1,6 +1,5 @@
 # TODO: Would be better to create a class object to contain the swept_parameters required, this will help reduce code
 #  breakage if interfaces change.
-import posgenpy
 from typing import List
 from lxml import etree
 import pandas
@@ -41,17 +40,85 @@ def write_xml_with_relabelling(
         clusterIDPosFile="clusterID.pos",
         dtd_file_location=""
 ):
-    """
-    # TODO write some documentation
-    Function to write an XML file to perform max-sep clustering on a pos file.
-    Then, runs the same analysis on relabelled data X times and saves it in a systematic way for further analysis.
+    """Function to write an XML file to perform max-sep clustering on a pos file.
+    Then, runs the same analysis on relabelled data X times and saves it in a 
+    systematic way for further analysis.
     POS files for relabelled data are not saved.
     To keep it clean, save all the files in the designated_folder.
-    xmlFileName, posFile, rangeFile, coreIons, bulkIons, relabelled_runs are required
-    All inputs should be strings, except the core/bulk ion lists and massRandomRelabel (boolean)
-    Set clusterstatsFile="" to not produce this file, similar for other output files
+    xmlFileName, posFile, rangeFile, coreIons, bulkIons, relabelled_runs are 
+    required. All inputs should be strings, except the core/bulk ion lists 
+    and massRandomRelabel (boolean).
+    Set clusterstatsFile="" to not produce this file, similar for other 
+    output files.
     See posgen manual for explanation of terms used in the XML file.
-    Requires lxml to run. Returns the lxml.etree._ElementTree object used to write the xml file.
+    Requires lxml to run. Returns the lxml.etree._ElementTree object used 
+    to write the xml file.
+
+    Args:
+        xmlFileName (str): name of the xml file you want to create
+        posFile (str): path to the pos file
+        rangeFile (str): path to the range file
+        coreIons (string_vector): list of core ions (elements) you want to 
+        search for
+        bulkIons (string_vector): list of bulk ions you want to exclude from 
+        the cluster search 
+        relabelled_runs (int): how many relabelled runs you want run, the more 
+        the higher accuracy of real to random cluster ratio
+        destination_folder (str, optional): dir path to where you want to save 
+        the data. Defaults to "".
+        dclassify (float, optional): The value specifies the "classification" 
+        distance, as described by Stephenson. To disable this step, set the value 
+        to zero. This parameter can be used to refine which points may be 
+        utilised as clustering "core" points.. Defaults to 0.0.
+        knn (int, optional): This parameter can be used to refine which points 
+        may be utilised as clustering "core" points. The knn attribute specifies 
+        that in order to be allowed, this k-th nearest neighbouring point must 
+        be found within the core radius. If not, it cannot be used as a "core" 
+        clustering point Defaults to 1.
+        dmax (float, optional): This value specifies the distance within which 
+        points that are nominated
+        to be "core" points may be found, in order to be considered part of the same 
+        cluster.. Defaults to 0.5.
+        dbulk (float, optional): distance from a cluster within which "bulk"
+        points, can be considered to be part of that cluster. Defaults to 0.2.
+        derode (float, optional): distance from non-clustered material
+        that bulk points otherwise associated to clusters should be rejected from 
+        clustering. Defaults to 0.2.
+        nminV (int, optional): The minimum allowable size of a cluster.
+        Clusters less than this size will be rejected from the analysis. Both nmin 
+        and nmax are optional,
+        and one or the other can be omitted. Defaults to 2.
+        nmaxV (int, optional): The minimum allowable size of a cluster.
+        Clusters less than this size will be rejected from the analysis. Both nmin 
+        and nmax are optional,
+        and one or the other can be omitted. Defaults to -1.
+        includeUnrangedPos (bool, optional): if False, it will not create this 
+        file. Defaults to True.
+        includeUnrangedStats (bool, optional): if False, it will not create 
+        this file. Defaults to True.
+        clusterstatsCore (bool, optional): if False, it will not create this 
+        file. Defaults to True.
+        clusterstatsBulk (bool, optional): if False, it will not create this 
+        file. Defaults to True.
+        clusterstatsPercluster (bool, optional): if False, it will not create 
+        this file. Defaults to True.
+        clusterstatsFile (str, optional): name of the file. Defaults to 
+        "cluster-stats.txt".
+        unclusterstatsFile (str, optional): name of the file. Defaults to 
+        "unclustered-stats.txt".
+        sizedistFile (str, optional): name of the file. Defaults to 
+        "sizedist.txt".
+        clusteredPosFile (str, optional): name of the file. Defaults to 
+        "cluster.pos".
+        unclusteredPosFile (str, optional): name of the file. Defaults to 
+        "unclustered.pos".
+        clusterIDPosFile (str, optional): name of the file. Defaults to 
+        "clusterID.pos".
+        dtd_file_location (str, optional): location of the dtd_file in your 
+        WSL system. Defaults to "".
+
+    Returns:
+        tree: xml file
     """
 
     root = etree.Element("posscript")
@@ -195,22 +262,25 @@ def write_xml_with_relabelling(
     return tree
 
 
-# TODO: fix this xml_for_msm_with_relabelling.py:310: RuntimeWarning: invalid value encountered in true_divide y_values = (real_local - random_local) / real_local
+# FIXME: fix this xml_for_msm_with_relabelling.py:310: RuntimeWarning: invalid value encountered 
+# in true_divide y_values = (real_local - random_local) / real_local
 
 def prepare_data_for_real_random_graphs(
         swept_parameters: float_vector,
         random_runs: int,
         xml_files: string_vector,
         n_min_values: integer_vector,
-):
+) -> dict:
     """
-    This function is used to prepare random and real cluster data for other plotting functions in this library.
+    This function is used to prepare random and real cluster data for other plotting 
+    functions in this library.
     Use for files created with write_xml_with_relabelling.
     :param xml_files: list of full path strings with xml files for posgen cluster search
     :param swept_parameters: list with all the parameters you swept across your files
     :param random_runs: integer number of relabelled runs in a given cluster search
     :param n_min_values: list of n_min values you want to check in each swept_parameter
-    :return: n_min values for each swept parameter that satisfies threshold fraction of real clusters
+    :return: n_min values for each swept parameter that satisfies threshold fraction of 
+    real clusters
     """
 
     # find number of clusters larger than n_min
@@ -272,17 +342,20 @@ def plot_real_cluster_ratio_across_swept_param(
         xml_files: string_vector,
         n_min_values: integer_vector,
         threshold: float = 0.95
-):
+) -> None:
     """
-    After sweeping through cluster search swept_parameter with posgen and generating the results with randomised data,
-    use this file to retrieve and plot the real to random clusters distribution.
+    After sweeping through cluster search swept_parameter with posgen and generating 
+    the results with randomised data, use this file to retrieve and plot the real to 
+    random clusters distribution.
     :param xml_files: list of full path strings with xml files for posgen cluster search
     :param swept_parameters: list with all the parameters you swept across your files
-    :param swept_parameter_name: name of the swept_parameter that's being swept, needed for the graphs
+    :param swept_parameter_name: name of the swept_parameter that's being swept, needed 
+    for the graphs
     :param random_runs: integer number of relabelled runs in a given cluster search
     :param n_min_values: list of n_min values you want to check in each swept_parameter
     :param threshold: ratio of real clusters wanted in the analysis
-    :return: n_min values for each swept parameter that satisfies threshold fraction of real clusters
+    :return: n_min values for each swept parameter that satisfies threshold fraction of 
+    real clusters
     """
 
     all_data = prepare_data_for_real_random_graphs(
@@ -340,16 +413,19 @@ def plot_real_clusters_across_swept_param(
         random_runs: int,
         xml_files: string_vector,
         n_min_values: integer_vector
-):
+) -> None:
     """
-    After sweeping through cluster search swept_parameter with posgen and generating the results with randomised data,
-    use this file to retrieve and plot the real to random clusters distribution.
+    After sweeping through cluster search swept_parameter with posgen and generating the 
+    results with randomised data, use this file to retrieve and plot the real to random 
+    clusters distribution.
     :param xml_files: list of full path strings with xml files for posgen cluster search
     :param swept_parameters: list with all the parameters you swept across your files
-    :param swept_parameter_name: name of the swept_parameter that's being swept, needed for the graphs
+    :param swept_parameter_name: name of the swept_parameter that's being swept, needed 
+    for the graphs
     :param random_runs: integer number of relabelled runs in a given cluster search
     :param n_min_values: list of n_min values you want to check in each swept_parameter
-    :return: n_min values for each swept parameter that satisfies threshold fraction of real clusters
+    :return: n_min values for each swept parameter that satisfies threshold fraction of 
+    real clusters
     """
 
     all_data = prepare_data_for_real_random_graphs(
@@ -540,7 +616,7 @@ def plot_cluster_composition_across_swept_param_absolute(
     for ion in core_ions:
         x_values = []
         y_values = []
-        for i, swept_parameter in enumerate(swept_parameters):
+        for swept_parameter in swept_parameters:
             x_values.append(swept_parameter)
             y_values.append(corrected_compositions[swept_parameter][ion] /
                             corrected_compositions[swept_parameter]["total clusters"] * 100)
@@ -576,7 +652,8 @@ def plot_cluster_composition_across_swept_param_relative(
 ) -> None:
 
     """
-    Plot stacked columns graphs with relative composition of core ions so that sum of all core ion composition = 100%
+    Plot stacked columns graphs with relative composition of core ions so that sum 
+    of all core ion composition = 100%
     :param swept_parameters: list of swept values
     :param swept_parameter_name: name of the parameter that is being swept
     :param core_ions: core ions you want to plot
