@@ -737,3 +737,12 @@ def plot_cluster_composition_across_swept_param_relative(
         plt.show()
 
     return None
+
+def seconds_to_hhmmss(seconds:float):
+    hh = int(numpy.floor(seconds/3600))
+    hh_rem = seconds % 3600
+    mm = int(numpy.floor(hh_rem/60))
+    ss = int(numpy.floor(seconds%60))
+    time_string = f"{hh}h {mm}m {ss}s"
+    return time_string
+
