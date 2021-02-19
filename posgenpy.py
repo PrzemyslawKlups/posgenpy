@@ -23,8 +23,8 @@ def write_xml_with_relabelling(
         dclassify=0.0,
         knn=1,
         dmax=0.5,
-        dbulk=0.2,
-        derode=0.2,
+        dbulk="dmax/2",
+        derode="dmax/2",
         nminV=2,
         nmaxV=-1,
         includeUnrangedPos=True,
@@ -120,6 +120,12 @@ def write_xml_with_relabelling(
     Returns:
         tree: xml file
     """
+    # change dbulk and derode default values and link them to be dmax/2
+    if dbulk == "dmax/2":
+        dbulk = dmax / 2
+
+    if derode == "dmax/2":
+        derode = dmax / 2
 
     root = etree.Element("posscript")
     root.append(etree.Element("version"))
@@ -341,7 +347,8 @@ def plot_real_cluster_ratio_across_swept_param(
         random_runs: int,
         xml_files: string_vector,
         n_min_values: integer_vector,
-        threshold: float = 0.95
+        threshold: float = 0.95,
+        graph_alpha: float = 0.6
 ) -> None:
     """
     After sweeping through cluster search swept_parameter with posgen and generating 
@@ -385,7 +392,7 @@ def plot_real_cluster_ratio_across_swept_param(
         y_values = (real_local - random_local) / real_local
 
         # plot
-        ax.plot(parameter_local, y_values, 'o-', color=colors[i], label="$N_{min}=%s$" % (n), alpha=0.6)
+        ax.plot(parameter_local, y_values, 'o-', color=colors[i], label="$N_{min}=%s$" % (n), alpha=graph_alpha)
 
     # adjust the plot
     ax.set_xlabel(swept_parameter_name)
@@ -412,7 +419,9 @@ def plot_real_clusters_across_swept_param(
         swept_parameter_name: str,
         random_runs: int,
         xml_files: string_vector,
-        n_min_values: integer_vector
+        n_min_values: integer_vector,
+        volume: float = 0,
+        graph_alpha: float = 0.7 
 ) -> None:
     """
     After sweeping through cluster search swept_parameter with posgen and generating the 
@@ -424,6 +433,8 @@ def plot_real_clusters_across_swept_param(
     for the graphs
     :param random_runs: integer number of relabelled runs in a given cluster search
     :param n_min_values: list of n_min values you want to check in each swept_parameter
+    :param volume: float volume of the dataset in m^3
+    :param graph_alpha: float opaqueness of the lines and markers
     :return: n_min values for each swept parameter that satisfies threshold fraction of 
     real clusters
     """
@@ -439,28 +450,41 @@ def plot_real_clusters_across_swept_param(
     colors = plt.cm.viridis(numpy.linspace(0, 1, len(n_min_values)))
     fig = plt.figure(figsize=(9, 5))
     ax = fig.add_axes([0.15, 0.3, 0.5, 0.6])
+
     # TODO: find the volume of the given tip to show no. density instead
+    show_volume = False
+    if volume != 0:
+        show_volume = True
 
     for i, n in enumerate(n_min_values):
 
         # sort the data to get values for each n
         parameter_local = numpy.array([])
         real_local = numpy.array([])
-        random_local = numpy.array([])
+        # random_local = numpy.array([])
+        if show_volume:
+            no_density_local = numpy.array([])
 
         for swept_parameter in all_data:
             parameter_local = numpy.append(parameter_local, swept_parameter)
             real_local = numpy.append(real_local, all_data[swept_parameter]["real"][n])
-            random_local = numpy.append(random_local, all_data[swept_parameter]["random averages"][n])
-
+            # random_local = numpy.append(random_local, all_data[swept_parameter]["random averages"][n])
+            if show_volume:
+                no_density_local = real_local / volume
         #     y_values = (real_local - random_local)/real_local
 
         # plot
-        ax.plot(parameter_local, real_local, 'o-', color=colors[i], label="$N_{min}=%s$" % (n), alpha=0.6)
+        if show_volume:
+            ax.plot(parameter_local, no_density_local, 'o-', color=colors[i], label="$N_{min}=%s$" % (n), alpha=graph_alpha)            
+        else:
+            ax.plot(parameter_local, real_local, 'o-', color=colors[i], label="$N_{min}=%s$" % (n), alpha=graph_alpha)
 
     # adjust the plot
     ax.set_xlabel(swept_parameter_name)
-    ax.set_ylabel("Real clusters")
+    if show_volume:
+        ax.set_ylabel("Number density [$m^{-3}$]")        
+    else:
+        ax.set_ylabel("Number of identified clusters")
     ax.legend(bbox_to_anchor=(1.3, 1))
     ax.grid()
     # ax.set_xlim(left=0)
@@ -494,7 +518,7 @@ def find_smallest_nmin(
     :param swept_parameter_name: name of the swept_parameter that's being swept, needed for the graphs
     :param random_runs: integer number of relabelled runs in a given cluster search
     :param n_min_values: list of n_min values you want to check in each swept_parameter
-    :param threshold: ratio of real clusters wanted in the analysis
+    :param threshold: fraction of real clusters wanted in the analysis
     :return: n_min values for each swept parameter that satisfies threshold fraction of real clusters
     """
 
@@ -513,11 +537,11 @@ def find_smallest_nmin(
         for n in n_min_values:
             local_real = all_data[swept_parameter]["real"][n]
             local_random = all_data[swept_parameter]["random averages"][n]
-            ratio = (local_real - local_random) / local_real
+            fraction_of_real_clusters = (local_real - local_random) / local_real
 
-            if ratio > threshold:
+            if fraction_of_real_clusters > threshold:
                 n_min_final[i] = int(n)
-                print(f"{swept_parameter_name}: {swept_parameter} | n_min: {n} | ratio: {ratio}")
+                print(f"{swept_parameter_name}: {swept_parameter} | n_min: {n} | fraction: {round(fraction_of_real_clusters, 3)} | real clusters: {local_real}")
                 break
 
     return n_min_final
@@ -586,7 +610,9 @@ def plot_cluster_composition_across_swept_param_absolute(
         xml_files: string_vector,
         n_min_values_for_swept_parameters: integer_vector,
         swept_parameter_name: str,
-        exclude_ions=None
+        exclude_ions=None,
+        graph_alpha: float = 0.7,
+        ion_colors: dict = {}
 ) -> None:
     """
     Plot graph with absolute composition of core ions across swept parameter values.
@@ -620,13 +646,15 @@ def plot_cluster_composition_across_swept_param_absolute(
             x_values.append(swept_parameter)
             y_values.append(corrected_compositions[swept_parameter][ion] /
                             corrected_compositions[swept_parameter]["total clusters"] * 100)
-
-        ax.plot(x_values, y_values, 'o-', alpha=0.7, label=ion)
+        if ion_colors:
+            ax.plot(x_values, y_values, 'o-', alpha=graph_alpha, label=ion, color=ion_colors[ion])
+        else:
+            ax.plot(x_values, y_values, 'o-', alpha=graph_alpha, label=ion)
 
     # adjust the plot
     ax.set_xlabel(swept_parameter_name)
     ax.set_ylabel("Cluster composition [at.%]")
-    ax.legend(bbox_to_anchor=(1.10, 1))
+    ax.legend(bbox_to_anchor=(1.2, 1))
     ax.grid()
     # ax.set_xlim(left=0)
     # ax.set_ylim(top=1.1)
@@ -648,7 +676,9 @@ def plot_cluster_composition_across_swept_param_relative(
         core_ions: string_vector,
         xml_files: string_vector,
         n_min_values_for_swept_parameters: integer_vector,
-        exclude_ions=None
+        exclude_ions=None,
+        graph_alpha: float = 1,
+        ion_colors: dict = {}
 ) -> None:
 
     """
@@ -718,7 +748,10 @@ def plot_cluster_composition_across_swept_param_relative(
         else:
             y_values_bar = next_values
 
-        ax.bar(x_values, y_values_bar, alpha=1, label=ion, width=column_width)
+        if ion_colors:
+            ax.bar(x_values, y_values_bar, alpha=graph_alpha, label=ion, width=column_width, color=ion_colors[ion])
+        else:
+            ax.bar(x_values, y_values_bar, alpha=graph_alpha, label=ion, width=column_width)
         next_values = y_values_bar - y_values
 
     # adjust the plot
