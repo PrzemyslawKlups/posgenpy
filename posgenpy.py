@@ -348,7 +348,8 @@ def plot_real_cluster_ratio_across_swept_param(
         xml_files: string_vector,
         n_min_values: integer_vector,
         threshold: float = 0.95,
-        graph_alpha: float = 0.6
+        graph_alpha: float = 0.6,
+        figsize: tuple = (9, 5)
 ) -> None:
     """
     After sweeping through cluster search swept_parameter with posgen and generating 
@@ -374,7 +375,7 @@ def plot_real_cluster_ratio_across_swept_param(
 
     # plot the graph
     colors = plt.cm.viridis(numpy.linspace(0, 1, len(n_min_values)))
-    fig = plt.figure(figsize=(9, 5))
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_axes([0.15, 0.3, 0.5, 0.6])
     # plt.subplot(211)
     for i, n in enumerate(n_min_values):
@@ -396,7 +397,7 @@ def plot_real_cluster_ratio_across_swept_param(
 
     # adjust the plot
     ax.set_xlabel(swept_parameter_name)
-    ax.set_ylabel("$(N_{real}-N_{rand})/N_{real}$")
+    ax.set_ylabel("$(N_{det}-N_{rand})/N_{det}$")
     ax.plot([min(swept_parameters), max(swept_parameters)], [threshold, threshold], 'r-', label=f"{round(threshold*100)}%")
     ax.legend(bbox_to_anchor=(1.05, 1))
     ax.grid()
@@ -421,7 +422,8 @@ def plot_real_clusters_across_swept_param(
         xml_files: string_vector,
         n_min_values: integer_vector,
         volume: float = 0,
-        graph_alpha: float = 0.7 
+        graph_alpha: float = 0.7,
+        figsize: tuple = (9, 5) 
 ) -> None:
     """
     After sweeping through cluster search swept_parameter with posgen and generating the 
@@ -448,7 +450,7 @@ def plot_real_clusters_across_swept_param(
 
     # plot the same graph but with total number of clusters
     colors = plt.cm.viridis(numpy.linspace(0, 1, len(n_min_values)))
-    fig = plt.figure(figsize=(9, 5))
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_axes([0.15, 0.3, 0.5, 0.6])
 
     # TODO: find the volume of the given tip to show no. density instead
@@ -536,8 +538,14 @@ def find_smallest_nmin(
         n_min_final.append(0)
         for n in n_min_values:
             local_real = all_data[swept_parameter]["real"][n]
+            # try:
             local_random = all_data[swept_parameter]["random averages"][n]
+            # except:
+            #     local_random = 0
+            # try:
             fraction_of_real_clusters = (local_real - local_random) / local_real
+            # except:
+            #     fraction_of_real_clusters = 0
 
             if fraction_of_real_clusters > threshold:
                 n_min_final[i] = int(n)
@@ -612,7 +620,8 @@ def plot_cluster_composition_across_swept_param_absolute(
         swept_parameter_name: str,
         exclude_ions=None,
         graph_alpha: float = 0.7,
-        ion_colors: dict = {}
+        ion_colors: dict = {},
+        figsize: tuple = (9, 5)
 ) -> None:
     """
     Plot graph with absolute composition of core ions across swept parameter values.
@@ -636,7 +645,7 @@ def plot_cluster_composition_across_swept_param_absolute(
     )
 
     # plot using the data prepared
-    fig = plt.figure(figsize=(9, 5))
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_axes([0.15, 0.3, 0.5, 0.6])
 
     for ion in core_ions:
@@ -644,8 +653,11 @@ def plot_cluster_composition_across_swept_param_absolute(
         y_values = []
         for swept_parameter in swept_parameters:
             x_values.append(swept_parameter)
-            y_values.append(corrected_compositions[swept_parameter][ion] /
-                            corrected_compositions[swept_parameter]["total clusters"] * 100)
+            try:
+                y_values.append(corrected_compositions[swept_parameter][ion] /
+                                corrected_compositions[swept_parameter]["total clusters"] * 100)
+            except ZeroDivisionError:
+                y_values.append(0)
         if ion_colors:
             ax.plot(x_values, y_values, 'o-', alpha=graph_alpha, label=ion, color=ion_colors[ion])
         else:
@@ -678,7 +690,8 @@ def plot_cluster_composition_across_swept_param_relative(
         n_min_values_for_swept_parameters: integer_vector,
         exclude_ions=None,
         graph_alpha: float = 1,
-        ion_colors: dict = {}
+        ion_colors: dict = {},
+        figsize: tuple = (9, 5)
 ) -> None:
 
     """
@@ -720,7 +733,7 @@ def plot_cluster_composition_across_swept_param_relative(
     # the same graph but stacked bars
     # calculate relative composition of core ions in the clusters and plot them
     next_values = None
-    fig = plt.figure(figsize=(9, 5))
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_axes([0.15, 0.3, 0.5, 0.6])
 
     # set a clear width of the columns depending on the swept parameters
