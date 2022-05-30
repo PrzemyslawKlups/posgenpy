@@ -823,5 +823,8 @@ def seconds_to_hhmmss(seconds:float):
 # size distribution vs order
 # works correctly on decomposed cluster stats file, 
 # include all ions in the txt file
-constant_cluster_stats_columns = ["X", "Y", "Z", "Unranged", "r_gyration", "Da", "Cluster ID", "x", "y", "z"]
 
+constant_cluster_stats_columns = [
+    "X", "Y", "Z", "Unranged", "r_gyration", "Da", "Cluster ID", "x", "y", "z", 
+    "Closest Cluster ID", "Closest Cluster Distance", "convexhull_volume", "convexhull_area"
+]
