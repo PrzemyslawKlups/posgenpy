@@ -6,6 +6,7 @@ import pandas
 import numpy
 import matplotlib.pyplot as plt
 import os
+# from sklearn.neighbors import KDTree
 
 string_vector = List[str]
 integer_vector = List[int]
@@ -349,7 +350,8 @@ def plot_real_cluster_ratio_across_swept_param(
         n_min_values: integer_vector,
         threshold: float = 0.95,
         graph_alpha: float = 0.6,
-        figsize: tuple = (9, 5)
+        figsize: tuple = (9, 5),
+        using_jupyter=True,
 ) -> None:
     """
     After sweeping through cluster search swept_parameter with posgen and generating 
@@ -400,7 +402,7 @@ def plot_real_cluster_ratio_across_swept_param(
     ax.set_ylabel("$(N_{det}-N_{rand})/N_{det}$")
     ax.plot([min(swept_parameters), max(swept_parameters)], [threshold, threshold], 'r-', label=f"{round(threshold*100)}%")
     ax.legend(bbox_to_anchor=(1.05, 1))
-    ax.grid()
+    # ax.grid()
     # ax.xlim(left=0)
     ax.set_ylim(top=1.1)
     ax.set_title("Fraction of Real Clusters")
@@ -408,12 +410,15 @@ def plot_real_cluster_ratio_across_swept_param(
     # skip plt.show() if run in jupyter notebook
     if "JPY_PARENT_PID" in os.environ:
         pass
+    elif using_jupyter:
+        pass
     else:
         plt.show()
 
     # todo return exact data points from the graph
     return None
 
+# TODO go through all plotting functions and make sure Order values are plotted as integers 
 
 def plot_real_clusters_across_swept_param(
         swept_parameters: float_vector,
@@ -423,7 +428,8 @@ def plot_real_clusters_across_swept_param(
         n_min_values: integer_vector,
         volume: float = 0,
         graph_alpha: float = 0.7,
-        figsize: tuple = (9, 5) 
+        figsize: tuple = (9, 5),
+        using_jupyter=True, 
 ) -> None:
     """
     After sweeping through cluster search swept_parameter with posgen and generating the 
@@ -488,13 +494,15 @@ def plot_real_clusters_across_swept_param(
     else:
         ax.set_ylabel("Number of identified clusters")
     ax.legend(bbox_to_anchor=(1.3, 1))
-    ax.grid()
+    # ax.grid()
     # ax.set_xlim(left=0)
     # ax.set_ylim(top=1.1)
     ax.set_title("Real Clusters and %s Values" % swept_parameter_name)
 
     # skip plt.show() if run in jupyter notebook
     if "JPY_PARENT_PID" in os.environ:
+        pass
+    elif using_jupyter:
         pass
     else:
         plt.show()
@@ -509,7 +517,8 @@ def find_smallest_nmin(
         random_runs: int,
         xml_files: string_vector,
         n_min_values: integer_vector,
-        threshold: float = 0.95
+        threshold: float = 0.95,
+        return_real_clusters=False,
 ) -> integer_vector:
 
     """
@@ -533,9 +542,15 @@ def find_smallest_nmin(
 
     # find the smallest n_min in all_data:
     n_min_final = []
+    real_clusters = []
+    random_clusters = []
 
     for i, swept_parameter in enumerate(swept_parameters):
+        
         n_min_final.append(0)
+        real_clusters.append(all_data[swept_parameter]["real"][n_min_values[0]])
+        random_clusters.append(all_data[swept_parameter]["random averages"][n_min_values[0]])
+
         for n in n_min_values:
             local_real = all_data[swept_parameter]["real"][n]
             # try:
@@ -549,10 +564,17 @@ def find_smallest_nmin(
 
             if fraction_of_real_clusters > threshold:
                 n_min_final[i] = int(n)
+                # add local real clusters to plot them later - we want to maximise it after all
+                # TODO update the code in the repo
+                real_clusters[i] = int(local_real)
+                random_clusters[i] = int(local_random)
                 print(f"{swept_parameter_name}: {swept_parameter} | n_min: {n} | fraction: {round(fraction_of_real_clusters, 3)} | real clusters: {local_real}")
                 break
 
-    return n_min_final
+    if return_real_clusters:
+        return n_min_final, real_clusters, random_clusters
+    else:
+        return n_min_final
 
 
 def prepare_data_for_composition_graphs(
@@ -621,7 +643,8 @@ def plot_cluster_composition_across_swept_param_absolute(
         exclude_ions=None,
         graph_alpha: float = 0.7,
         ion_colors: dict = {},
-        figsize: tuple = (9, 5)
+        figsize: tuple = (9, 5),
+        using_jupyter=True,
 ) -> None:
     """
     Plot graph with absolute composition of core ions across swept parameter values.
@@ -667,13 +690,15 @@ def plot_cluster_composition_across_swept_param_absolute(
     ax.set_xlabel(swept_parameter_name)
     ax.set_ylabel("Cluster composition [at.%]")
     ax.legend(bbox_to_anchor=(1.2, 1))
-    ax.grid()
+    # ax.grid()
     # ax.set_xlim(left=0)
     # ax.set_ylim(top=1.1)
     ax.set_title(f"Absolute Cluster Composition and %s Values" % swept_parameter_name)
 
     # skip plt.show() if run in jupyter notebook
     if "JPY_PARENT_PID" in os.environ:
+        pass
+    elif using_jupyter:
         pass
     else:
         plt.show()
@@ -691,7 +716,8 @@ def plot_cluster_composition_across_swept_param_relative(
         exclude_ions=None,
         graph_alpha: float = 1,
         ion_colors: dict = {},
-        figsize: tuple = (9, 5)
+        figsize: tuple = (9, 5),
+        using_jupyter=True,
 ) -> None:
 
     """
@@ -771,13 +797,15 @@ def plot_cluster_composition_across_swept_param_relative(
     ax.set_xlabel(swept_parameter_name)
     ax.set_ylabel("Corrected relative cluster composition [at.%]")
     ax.legend(bbox_to_anchor=(1.05, 1))
-    # ax.grid()
+    # # ax.grid()
     # ax.set_xlim(left=0)
     # ax.set_ylim(top=1.1)
     ax.set_title(f"Relative Cluster Composition and %s Values" % swept_parameter_name)
 
     # skip plt.show() if run in jupyter notebook
     if "JPY_PARENT_PID" in os.environ:
+        pass
+    elif using_jupyter:
         pass
     else:
         plt.show()
@@ -791,4 +819,9 @@ def seconds_to_hhmmss(seconds:float):
     ss = int(numpy.floor(seconds%60))
     time_string = f"{hh}h {mm}m {ss}s"
     return time_string
+
+# size distribution vs order
+# works correctly on decomposed cluster stats file, 
+# include all ions in the txt file
+constant_cluster_stats_columns = ["X", "Y", "Z", "Unranged", "r_gyration", "Da", "Cluster ID", "x", "y", "z"]
 
