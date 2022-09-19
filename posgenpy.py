@@ -7,6 +7,7 @@ import numpy
 import matplotlib.pyplot as plt
 import os
 # from sklearn.neighbors import KDTree
+import pandas as pd
 
 string_vector = List[str]
 integer_vector = List[int]
@@ -272,11 +273,37 @@ def write_xml_with_relabelling(
 # FIXME: fix this xml_for_msm_with_relabelling.py:310: RuntimeWarning: invalid value encountered 
 # in true_divide y_values = (real_local - random_local) / real_local
 
+def calculate_cluster_size(
+    df: pd.DataFrame,
+    core_ions: list,
+    bulk_ions: list,
+    elements_to_exclude: list,
+) -> pd.Series:
+    """This function calculates cluster size based on elements provided.
+    It can also exclude elements from the list such as Fe.
+
+    Args:
+        df (pd.DataFrame): dataframe with cluster stats from cluster-stats.txt, already decomposed 
+        core_ions (list): list of core elements used to run this cluster analysis
+        bulk_ions (list): list of bulk elements used to run this cluster analysis
+        elements_to_exclude (list): list of elements to exclude (e.g. Fe)
+
+    Returns:
+        pd.Series: _description_
+    """
+    # combine all elements into one list
+    elements_to_include = [e for e in core_ions+bulk_ions if e not in elements_to_exclude]
+
+    # get cluster size series
+    cluster_size = df.loc[:, elements_to_include].sum(axis=1)
+
+    return cluster_size
+
 def prepare_data_for_real_random_graphs(
-        swept_parameters: float_vector,
-        random_runs: int,
-        xml_files: string_vector,
-        n_min_values: integer_vector,
+    swept_parameters: float_vector,
+    random_runs: int,
+    xml_files: string_vector,
+    n_min_values: integer_vector,
 ) -> dict:
     """
     This function is used to prepare random and real cluster data for other plotting 
@@ -619,7 +646,8 @@ def prepare_data_for_composition_graphs(
         # local_df["Fm"] = local_df["Fm"] * 0
         # add total ions in cluster value
 
-        local_df["Cluster Size"] = local_df.iloc[:, 3:-2].sum(axis=1)
+        # local_df["Cluster Size"] = local_df.iloc[:, 3:-2].sum(axis=1) # no longer needed
+        
         # change n_min
         local_df = local_df[local_df["Cluster Size"] >= n_min_values_for_swept_parameters[i]]
 

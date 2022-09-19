@@ -331,7 +331,8 @@ def is_uppercase(s):
 
 constant_cluster_stats_columns = [
     "X", "Y", "Z", "Unranged", "r_gyration", "Da", "Cluster ID", "x", "y", "z", 
-    "Closest Cluster ID", "Closest Cluster Distance", "convexhull_volume", "convexhull_area"
+    "Closest Cluster ID", "Closest Cluster Distance", "convexhull_volume", "convexhull_area",
+    "Cluster Size", "Cluster Size with Fe"
 ]
 
 
@@ -457,7 +458,8 @@ def remove_clusters_smaller_than_nmin(
     ion_columns = [col for col in cluster_stats_df_new.columns if col not in constant_cluster_stats_columns]
     
     # find clusters with sizes smaller than the threshold
-    cluster_sizes = cluster_stats_df_new.loc[:, ion_columns].sum(axis=1)
+    # cluster_sizes = cluster_stats_df_new.loc[:, ion_columns].sum(axis=1) #  no longer needed
+    cluster_sizes = cluster_stats_df_new['Cluster Size']
     cluster_stats_to_remove = cluster_stats_df_new.loc[cluster_sizes < nmin, :]
     
     # add them to the matrix
@@ -513,8 +515,8 @@ def get_cluster_metrics(
     # recalculate the above variables if need to exclude Fe
     if excluded_Fe:
         Fe_in_clusters = cluster_stats_df_new.loc[:, 'Fe'].sum()
-        clustered_volume = (ranged_atoms_in_clusters - Fe_in_clusters) / (detector_efficiency * atomic_density_per_nm3)
-        volume_fraction = (ranged_atoms_in_clusters - Fe_in_clusters) / ranged_atoms_in_bulk
+        clustered_volume_no_Fe = (ranged_atoms_in_clusters - Fe_in_clusters) / (detector_efficiency * atomic_density_per_nm3)
+        volume_fraction_no_Fe = (ranged_atoms_in_clusters - Fe_in_clusters) / ranged_atoms_in_bulk
 
     # tip volume
     tip_volume = ranged_atoms_in_bulk / (detector_efficiency * atomic_density_per_nm3)
@@ -546,11 +548,15 @@ def get_cluster_metrics(
         "N_min": n_min,
         "core ions": "+".join(core_ions),
         "bulk ions": "+".join(bulk_ions),
-        "Fe excluded?": fe_status,
         "detector efficiency": detector_efficiency,
         "assumed atomic density per nm3": atomic_density_per_nm3,
         "reconstruction_location": reconstruction_location,
     }
+
+    if excluded_Fe:
+        metrics["clustered volume no Fe nm3"] = clustered_volume_no_Fe
+        metrics["volume fraction no Fe"] = volume_fraction_no_Fe
+        metrics["Fe excluded?"]: fe_status
 
     return metrics
 
@@ -561,13 +567,14 @@ def correct_cluster_files(
     cluster_stats_file_path:str,
     unclustered_stats_file_path:str,
     clusterID_pos_file_path:str,
+    xml_file:str,
     show_mass_spec:bool=False,
     print_log:bool=True,
     # detector_efficiency:float=0.52,
     # atomic_density_per_nm3:float=85.49,
     deconvolute_fm:bool=False,
     nmin:int=0,
-    # include_metrics:bool=False
+    # include_metrics:bool=False 
 ):
 
     """Umbrella function for all the corrections in this file. Spits out data necessary for further analysis 
@@ -608,8 +615,9 @@ def correct_cluster_files(
 
     # open (un)cluster(ed) stats file
     print("Opening cluster stats files")
-    cluster_stats_df = pd.read_csv(cluster_stats_file_path, sep='\t')
+    # cluster_stats_df = pd.read_csv(cluster_stats_file_path, sep='\t')
     unclustered_stats_df = pd.read_csv(unclustered_stats_file_path, sep='\t')
+    _, cluster_stats_df, _ = label_clusters(xml_file) # labeled clusters, needed for knn cluster distance
 
     # correct them before any further transformations
     print("Decomposing cluster stats files")
@@ -619,6 +627,11 @@ def correct_cluster_files(
         print("Deconvoluting Fm peak in cluster stats files")
         cluster_stats_df = deconvolute_Fm_clusters(cluster_stats_df)
         unclustered_stats_df = deconvolute_Fm_clusters(unclustered_stats_df)
+
+    print("Performing KNN Cluster Distance analysis")
+    nmin_mask = cluster_stats_df['Cluster Size'] >= nmin
+    knn_columns = ['Closest Cluster ID', 'Closest Cluster Distance']
+    cluster_stats_df.loc[nmin_mask, knn_columns] = find_knn_cluster_distance(cluster_stats_df.loc[nmin_mask, :]).loc[:, knn_columns]
 
     # remove edge clusters and calculate the metrics
     print("Identifying and removing edge clusters")
@@ -758,7 +771,7 @@ def prepare_df_for_cluster_distr(
         
         col_to_iterate = [col for col in this_cs_df.columns if col not in constant_cluster_stats_columns]
         this_sd_df = this_cs_df.copy()
-        this_sd_df['Cluster Size'] = this_cs_df.loc[:, col_to_iterate].sum(axis=1)
+        # this_sd_df['Cluster Size'] = this_cs_df.loc[:, col_to_iterate].sum(axis=1) # no longer needed
 
         # change n_min
         if n_mins:
