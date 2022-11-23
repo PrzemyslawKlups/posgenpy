@@ -183,7 +183,7 @@ def not_in_hull(p, hull):
 
 
 
-def remove_edge_clusters(
+def remove_edge_clusters_old(
     ranged_pos_df:pd.DataFrame, 
     cluster_id_pos:pd.DataFrame, 
     cluster_stats_df_all:pd.DataFrame,
@@ -288,6 +288,118 @@ def remove_edge_clusters(
     return data
 
 
+def remove_edge_clusters(
+    ranged_pos_df:pd.DataFrame, 
+    cluster_id_pos:pd.DataFrame, 
+    cluster_stats_df_all:pd.DataFrame,
+    nmin:int=0,
+    print_log=False
+    ):
+
+    # copy files
+    print("Preparing data for edge cluster removal")
+    pos = ranged_pos_df.copy()
+    this_cluster_stats_df = cluster_stats_df_all.copy()
+    this_cluster_id_pos = cluster_id_pos.copy()
+    
+    # prepare variables before the loop
+    cluster_id_list = this_cluster_id_pos.loc[:, 'Da'].unique()
+    edge_clusters = []
+    is_edge_cluster = []
+    nmin_removed = 0
+    cluster_id_pos_grouped = this_cluster_id_pos.groupby('Da').mean()
+    list_of_das = cluster_id_pos_grouped.sort_values(by=['x', 'y', 'z']).index
+    this_cluster_stats_df = this_cluster_stats_df.sort_values(by=['X', 'Y', 'Z'])
+    # area and volume for convex hull - experimental
+    convex_hull_volumes = []
+    convex_hull_areas = []
+
+    if len(this_cluster_stats_df) != len(list_of_das):
+        print("Function stopped. cluster-stats and clusterID.pos file have different lengths")
+    this_cluster_stats_df['Da'] = list_of_das
+    
+    # prepare an alpha shape for pos file
+    print("Calculating alphashape (might take a few seconds)")
+    points = pos.iloc[:, :3].sample(frac=0.01).to_numpy()
+    array_of_tuples = map(tuple, points)
+    points_3d = (list(array_of_tuples))
+    alpha_shape = alphashape.alphashape(points_3d, 0.1)
+    cloud_vertices = pd.DataFrame(alpha_shape.vertices, columns=['x', 'y', 'z'])
+    print("Alphashape calculated")  
+
+    # iterate through every cluster and see if it's an edge cluster
+    print("Iterating through all clusters")
+    # for id in tqdm(cluster_id_list):
+    for id in tqdm(list_of_das):
+        
+        # find point coordinates for each cluster
+        cluster_point_cloud = this_cluster_id_pos.loc[this_cluster_id_pos['Da']==id, ['x', 'y', 'z']]
+
+        # skip if this cluster is less than nmin 
+        if len(cluster_point_cloud) < nmin:
+            nmin_removed += 1
+            convex_hull_volumes.append(0)
+            convex_hull_areas.append(0)
+            is_edge_cluster.append(0)
+            continue
+
+        # find convex hull around each cluster
+        convex_hull = ConvexHull(cluster_point_cloud)
+        cluster_shell_points = cluster_point_cloud.iloc[convex_hull.vertices]
+        convex_hull_volumes.append(convex_hull.volume)
+        convex_hull_areas.append(convex_hull.area)
+
+        # check if there are any points outside hull
+        is_it_edge = any(not_in_hull(cluster_shell_points, cloud_vertices))
+        
+        # if edge cluster
+        if is_it_edge:
+            # add it to the list
+            edge_clusters.append(id)
+            # and tag it as 1 (TRUE)
+            is_edge_cluster.append(1)
+        else:
+            # tag it as 0 (FALSE)
+            is_edge_cluster.append(0)
+
+    # add area and volume columns to the main dataframe
+    this_cluster_stats_df.loc[:, "convexhull_area"] = convex_hull_areas
+    this_cluster_stats_df.loc[:, "convexhull_volume"] = convex_hull_volumes
+    this_cluster_stats_df.loc[:, "is_edge_cluster"] = is_edge_cluster
+
+    # remove edge clusters from stat files
+    cluster_stats_df_no_edge = this_cluster_stats_df.loc[~this_cluster_stats_df['Da'].isin(edge_clusters)]
+    cluster_stats_df_edge_only = this_cluster_stats_df.loc[this_cluster_stats_df['Da'].isin(edge_clusters)]
+
+    # remove it from the cluster_id_pos_file 
+    this_cluster_id_pos = this_cluster_id_pos.loc[~this_cluster_id_pos['Da'].isin(edge_clusters), :]
+
+    # print how many edge clusters were removed
+    all_clusters_number = len(cluster_id_list)
+    clusters_removed_number = len(edge_clusters)
+    current_clusters_number = len(cluster_stats_df_no_edge)
+    fraction_of_clusters_removed_pct = round(clusters_removed_number/current_clusters_number*100, 1)
+
+    # safety check
+    if (current_clusters_number + clusters_removed_number) != all_clusters_number:
+        print(f"Clusters don't add up!")
+
+    if print_log:
+        print(f"Clusters smaller than nmin: {nmin_removed} out of {all_clusters_number}")
+        print(f"Edge clusters: {clusters_removed_number} out of {all_clusters_number-nmin_removed} ({fraction_of_clusters_removed_pct}%)") 
+
+
+    # combine it into one dictionary
+    data = {
+        'cluster_stats_df': this_cluster_stats_df,
+        'cluster_stats_df_no_edge': cluster_stats_df_no_edge,
+        'cluster_stats_df_edge_only':cluster_stats_df_edge_only, 
+        'cluster_id_pos':this_cluster_id_pos, 
+        'edge_clusters':edge_clusters
+        }
+
+    return data
+
 
 def is_number(s):
     """Checks if a given character is a number even if its a string
@@ -332,7 +444,7 @@ def is_uppercase(s):
 constant_cluster_stats_columns = [
     "X", "Y", "Z", "Unranged", "r_gyration", "Da", "Cluster ID", "x", "y", "z", 
     "Closest Cluster ID", "Closest Cluster Distance", "convexhull_volume", "convexhull_area",
-    "Cluster Size", "Cluster Size with Fe"
+    "Cluster Size", "Cluster Size without Fe", "Cluster Size with Fe", "is_edge_cluster"
 ]
 
 
@@ -456,6 +568,7 @@ def remove_clusters_smaller_than_nmin(
 
     # remove clusters that don't satisty Nmin
     ion_columns = [col for col in cluster_stats_df_new.columns if col not in constant_cluster_stats_columns]
+    ion_columns_unclustered = [col for col in unclustered_stats_df_new.columns if col not in constant_cluster_stats_columns]
     
     # find clusters with sizes smaller than the threshold
     # cluster_sizes = cluster_stats_df_new.loc[:, ion_columns].sum(axis=1) #  no longer needed
@@ -463,19 +576,18 @@ def remove_clusters_smaller_than_nmin(
     cluster_stats_to_remove = cluster_stats_df_new.loc[cluster_sizes < nmin, :]
     
     # add them to the matrix
-    unclustered_stats_df_new.loc[0, ion_columns] = unclustered_stats_df_new.loc[0, ion_columns] + cluster_stats_to_remove.sum()
+    unclustered_stats_df_new.loc[0, ion_columns_unclustered] = unclustered_stats_df_new.loc[0, ion_columns_unclustered] + cluster_stats_to_remove.sum()
     # and remove from the stats file
     cluster_stats_df_nmin_removed = cluster_stats_df_new.loc[cluster_sizes >= nmin, :]
 
     return cluster_stats_df_nmin_removed, unclustered_stats_df_new
-
 
 def get_cluster_metrics(
     reconstruction_name:str,
     reconstruction_location:str,
     sample_type:str,
     cluster_stats_df:pd.DataFrame,
-    cluster_stats_df_no_edge:pd.DataFrame,
+    # cluster_stats_df_no_edge:pd.DataFrame,
     unclustered_stats_df:pd.DataFrame,
     core_ions:list,
     bulk_ions:list,
@@ -497,12 +609,12 @@ def get_cluster_metrics(
     """
 
     # copy_necessary_cols only
-    columns_to_copy = [col for col in cluster_stats_df.columns if col not in constant_cluster_stats_columns]
-    cluster_stats_df_new = cluster_stats_df.loc[:, columns_to_copy].copy()
+    # columns_to_copy = [col for col in cluster_stats_df.columns if col not in constant_cluster_stats_columns]
+    cluster_stats_df_new = cluster_stats_df.loc[:, :].copy()
 
     # calculate number of atoms using cluster-stats files
-    ranged_atoms_in_matrix = unclustered_stats_df.sum().sum() - unclustered_stats_df.loc[0, 'Unranged']
-    ranged_atoms_in_clusters = cluster_stats_df_new.loc[:, columns_to_copy].sum().sum()
+    ranged_atoms_in_matrix = unclustered_stats_df.loc[:, 'Cluster Size'].sum()
+    ranged_atoms_in_clusters = cluster_stats_df_new.loc[:, 'Cluster Size'].sum()
     ranged_atoms_in_bulk = ranged_atoms_in_clusters + ranged_atoms_in_matrix
 
     # print(ranged_atoms_in_bulk, ranged_atoms_in_clusters, ranged_atoms_in_matrix)
@@ -516,13 +628,13 @@ def get_cluster_metrics(
     if excluded_Fe:
         Fe_in_clusters = cluster_stats_df_new.loc[:, 'Fe'].sum()
         clustered_volume_no_Fe = (ranged_atoms_in_clusters - Fe_in_clusters) / (detector_efficiency * atomic_density_per_nm3)
-        volume_fraction_no_Fe = (ranged_atoms_in_clusters - Fe_in_clusters) / ranged_atoms_in_bulk
+        volume_fraction_no_Fe = (ranged_atoms_in_clusters - Fe_in_clusters) / (ranged_atoms_in_bulk + Fe_in_clusters)
 
     # tip volume
     tip_volume = ranged_atoms_in_bulk / (detector_efficiency * atomic_density_per_nm3)
 
     # Number density including half of edge clusters
-    number_of_edge_clusters = len(cluster_stats_df) - len(cluster_stats_df_no_edge)
+    number_of_edge_clusters = len(cluster_stats_df[cluster_stats_df['is_edge_cluster']==1])
     number_of_all_clusters = len(cluster_stats_df)
     number_density = (len(cluster_stats_df) - (0.5*number_of_edge_clusters)) / tip_volume
     number_density_error = np.sqrt((len(cluster_stats_df) - (0.5*number_of_edge_clusters))) / tip_volume
@@ -561,7 +673,7 @@ def get_cluster_metrics(
     return metrics
 
 
-def correct_cluster_files(
+def correct_cluster_files_old(
     pos_file_path:str,
     rrng_file_path:str,
     cluster_stats_file_path:str,
@@ -631,7 +743,10 @@ def correct_cluster_files(
     print("Performing KNN Cluster Distance analysis")
     nmin_mask = cluster_stats_df['Cluster Size'] >= nmin
     knn_columns = ['Closest Cluster ID', 'Closest Cluster Distance']
-    cluster_stats_df.loc[nmin_mask, knn_columns] = find_knn_cluster_distance(cluster_stats_df.loc[nmin_mask, :]).loc[:, knn_columns]
+    try:
+        cluster_stats_df.loc[nmin_mask, knn_columns] = find_knn_cluster_distance(cluster_stats_df.loc[nmin_mask, :]).loc[:, knn_columns]
+    except ValueError:
+        print("Value Error. KNN Distance not available.")
 
     # remove edge clusters and calculate the metrics
     print("Identifying and removing edge clusters")
@@ -642,6 +757,9 @@ def correct_cluster_files(
         nmin=nmin,
         print_log=print_log 
     )
+
+    # TODO this should result in same df with extra column 'edge' TRUE / FALSE
+    # TODO similar thing about the Nmin
 
     # open new cluster_stats files after edge cluster removal and apply nmin filter
     print("Applying Nmin threshold to cluster stats files")
@@ -672,6 +790,138 @@ def correct_cluster_files(
         "cluster_stats_df_post_nmin_post_edge": cluster_stats_df_no_edge,
         "edge_cluster_stats_df": cluster_stats_df_edge_only,
         "cluster_id_pos": data['cluster_id_pos'],
+        "edge_clusters": data['edge_clusters'],
+        "unclustered_stats_df": unclustered_stats_df,
+    }
+
+    print("Done")
+
+    return corrected_data
+
+
+def correct_cluster_files(
+    pos_file_path:str,
+    rrng_file_path:str,
+    cluster_stats_file_path:str,
+    unclustered_stats_file_path:str,
+    clusterID_pos_file_path:str,
+    xml_file:str,
+    show_mass_spec:bool=False,
+    print_log:bool=True,
+    # detector_efficiency:float=0.52,
+    # atomic_density_per_nm3:float=85.49,
+    deconvolute_fm:bool=False,
+    nmin:int=0,
+    # include_metrics:bool=False 
+):
+
+    """Umbrella function for all the corrections in this file. Spits out data necessary for further analysis 
+    including get_cluster_metrics() method. Designed for analysing MnNiSi-rich and Cu-rich clusters in RPV steels.
+    Can be applied to more material systems.
+
+    Returns:
+        dict: dictionary with self-explanatory variables in keys, values are pd.DataFrame(s)
+    """
+
+    # open pos and range files
+    print("Opening pos and range files")
+    pos = read_pos(pos_file_path)
+    _, Ranges = read_rrng(rrng_file_path)
+    cluster_id_pos = read_pos(clusterID_pos_file_path)
+
+    # check if Ranges are empty (AP Suite format) and run second rrng reader
+    if len(Ranges) == 0:
+        print("Range file in APSuite format. Reading it again")
+        Ranges = read_apt_range_file(rrng_file_path)
+
+    print("Labeling ions")
+    label_ions(pos,Ranges)
+    pos['comp'] = pos.comp.str.replace(':','')
+
+    # Create Mass Spec
+    if show_mass_spec:
+        print("Showing Mass-to-charge spectrum")
+        BinWidth = 0.1
+        Bins = int(pos.Da.max()/BinWidth)
+        pos.Da.plot.hist(bins=Bins,
+                        alpha=1)
+        plt.yscale('log')
+        plt.show()
+
+    # filter the ions that are ranged only
+    ranged_pos = pos[pos['comp']!='']
+
+    # open (un)cluster(ed) stats file
+    print("Opening cluster stats files")
+    # cluster_stats_df = pd.read_csv(cluster_stats_file_path, sep='\t')
+    unclustered_stats_df = pd.read_csv(unclustered_stats_file_path, sep='\t')
+    cluster_pos, cluster_stats_df, _ = label_clusters(xml_file) # labeled clusters, needed for knn cluster distance
+
+    # correct them before any further transformations
+    print("Decomposing cluster stats files")
+    cluster_stats_df = decompose_cluster_stats(cluster_stats_df)
+    unclustered_stats_df = decompose_cluster_stats(unclustered_stats_df)
+    if deconvolute_fm:
+        print("Deconvoluting Fm peak in cluster stats files")
+        cluster_stats_df = deconvolute_Fm_clusters(cluster_stats_df)
+        unclustered_stats_df = deconvolute_Fm_clusters(unclustered_stats_df)
+
+    print("Performing KNN Cluster Distance analysis")
+    nmin_mask = cluster_stats_df['Cluster Size'] >= nmin
+    knn_columns = ['Closest Cluster ID', 'Closest Cluster Distance']
+    try:
+        cluster_stats_df.loc[nmin_mask, knn_columns] = find_knn_cluster_distance(cluster_stats_df.loc[nmin_mask, :]).loc[:, knn_columns]
+    except ValueError:
+        print("Value Error. KNN Distance not available.")
+
+    # remove edge clusters and calculate the metrics
+    print("Identifying and removing edge clusters")
+    data = remove_edge_clusters(
+        ranged_pos_df=ranged_pos, 
+        cluster_id_pos=cluster_id_pos, 
+        cluster_stats_df_all=cluster_stats_df,
+        nmin=nmin,
+        print_log=print_log 
+    )
+
+    # TODO this should result in same df with extra column 'edge' TRUE / FALSE
+
+    # open new cluster_stats files after edge cluster removal and apply nmin filter
+    # print("Applying Nmin threshold to cluster stats files")
+    # cluster_stats_df_no_edge, unclustered_stats_df = cc.remove_clusters_smaller_than_nmin(
+    #     data['cluster_stats_df_no_edge'],
+    #     unclustered_stats_df,
+    #     nmin=nmin
+    # )
+    # cluster_stats_df_edge_only, unclustered_stats_df = cc.remove_clusters_smaller_than_nmin(
+    #     data['cluster_stats_df_edge_only'],
+    #     unclustered_stats_df,
+    #     nmin=nmin
+    # )
+    # # apply it to both from above too
+    # cluster_stats_df_post_nmin_prior_edge, _ = cc.remove_clusters_smaller_than_nmin(
+    #     cluster_stats_df, 
+    #     unclustered_stats_df, 
+    #     nmin
+    # )
+    cluster_stats_df, unclustered_stats_df = remove_clusters_smaller_than_nmin(
+        data['cluster_stats_df'],
+        unclustered_stats_df,
+        nmin=nmin
+    )
+
+    # check if the lengths of post_edge two match with the prior_edge files
+    # if len(cluster_stats_df_post_nmin_prior_edge) != (len(cluster_stats_df_no_edge)+len(cluster_stats_df_edge_only)):
+    #     print("Warning! Lengths of cluster_stats file before and after edge removal don't match after applying nmin filter.")
+
+    # create a final dictionary
+    corrected_data = {
+        # "cluster_stats_df_post_nmin_prior_edge": cluster_stats_df_post_nmin_prior_edge,
+        # "cluster_stats_df_post_nmin_post_edge": cluster_stats_df_no_edge,
+        # "edge_cluster_stats_df": cluster_stats_df_edge_only,
+        "cluster_stats_df": cluster_stats_df,
+        "cluster_id_pos": data['cluster_id_pos'],
+        "cluster_pos": cluster_pos[cluster_pos['Cluster ID'].isin(cluster_stats_df['Cluster ID'])],
         "edge_clusters": data['edge_clusters'],
         "unclustered_stats_df": unclustered_stats_df,
     }
@@ -729,11 +979,21 @@ def find_knn_cluster_distance(df:pd.DataFrame):
 
     # create a copy of df
     this_df = df.copy()
+
+    # check if this df has more than 1 cluster
+    if len(this_df) < 2:
+        print("Less than 2 clusters found. KNN Distance not available.")
+        # create or overwrite the df given
+        this_df.loc[:, 'Closest Cluster Distance'] = 'not available'
+        this_df.loc[:, 'Closest Cluster ID'] = 'not available'
+        return this_df
     
     # create a 3 column numpy array
     xyz = this_df.loc[:, ['X','Y','Z']].to_numpy()
+    
     # calculate nearest neighbours
     nbrs = NearestNeighbors(n_neighbors=2, algorithm='ball_tree').fit(xyz)
+
     # save the nearest distances and indexes of the closest points
     d, indices = nbrs.kneighbors(xyz)
     

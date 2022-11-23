@@ -294,6 +294,11 @@ def calculate_cluster_size(
     # combine all elements into one list
     elements_to_include = [e for e in core_ions+bulk_ions if e not in elements_to_exclude]
 
+    # check if df is empty
+    if df.empty:
+        data_to_insert = [0 for col in df.columns]
+        df = pd.DataFrame(columns=[df.columns], data=[data_to_insert])
+        
     # get cluster size series
     cluster_size = df.loc[:, elements_to_include].sum(axis=1)
 
@@ -319,6 +324,7 @@ def prepare_data_for_real_random_graphs(
 
     # find number of clusters larger than n_min
     # find all real clusters for all d_max values
+    # TODO this function is also wrong as it uses core ions only
     all_data = {}
 
     for i, swept_parameter in enumerate(swept_parameters):
@@ -550,7 +556,8 @@ def find_smallest_nmin(
 
     """
     Reads real and random cluster searches, finds the real cluster ratio for multiple n_values
-    and returns a list of smallest n_min values for each swept_parameter that satisfies given threshold
+    and returns a list of smallest n_min values for each swept_parameter that satisfies given threshold.
+    It doesn't consider excluded Fe (or other matrix) ions.
     :param xml_files: list of full path strings with xml files for posgen cluster search
     :param swept_parameters: list with all the parameters you swept across your files
     :param swept_parameter_name: name of the swept_parameter that's being swept, needed for the graphs
@@ -580,15 +587,17 @@ def find_smallest_nmin(
 
         for n in n_min_values:
             local_real = all_data[swept_parameter]["real"][n]
-            # try:
             local_random = all_data[swept_parameter]["random averages"][n]
-            # except:
-            #     local_random = 0
-            # try:
+            if local_real == 0:
+                n_min_final[i] = int(n)
+                # add local real clusters to plot them later - we want to maximise it after all
+                real_clusters[i] = int(local_real)
+                random_clusters[i] = int(local_random)
+                print(f"{swept_parameter_name}: {swept_parameter} | n_min: {n} | fraction: FAILED | real clusters: {local_real}")
+                break
+            
             fraction_of_real_clusters = (local_real - local_random) / local_real
-            # except:
-            #     fraction_of_real_clusters = 0
-
+            
             if fraction_of_real_clusters > threshold:
                 n_min_final[i] = int(n)
                 # add local real clusters to plot them later - we want to maximise it after all
@@ -854,5 +863,78 @@ def seconds_to_hhmmss(seconds:float):
 
 constant_cluster_stats_columns = [
     "X", "Y", "Z", "Unranged", "r_gyration", "Da", "Cluster ID", "x", "y", "z", 
-    "Closest Cluster ID", "Closest Cluster Distance", "convexhull_volume", "convexhull_area"
+    "Closest Cluster ID", "Closest Cluster Distance", "convexhull_volume", "convexhull_area", 
+    "Cluster Size", "Cluster Size without Fe", "is_edge_cluster"
 ]
+
+def optimise_n_min(
+    xml_files:list,
+    random_runs:int,
+    confidence_threshold:float=0.95,
+    n_min_values = numpy.arange(1, 500, 1),
+)->tuple:
+
+    # new nmin optimiser
+
+    optimised_n_min_values = []
+    optimised_real_clusters = []
+    optimised_random_clusters = []
+
+    for xml_file in xml_files:
+        
+        # open cluster stats file
+        cluster_stats_file_path = xml_file.replace(".xml", "_cluster-stats.txt")
+        csdf = pd.read_csv(cluster_stats_file_path, sep="\t")
+
+        # open all randomised cluster stats and combine them into one
+        rcsdf_array = []
+        for r in range(random_runs):
+            rcluster_stats_file_path = xml_file.replace(".xml", f"_random_{r+1}_cluster-stats.txt")
+            try:
+                this_csdf = pd.read_csv(rcluster_stats_file_path, sep="\t")
+            except:
+                this_csdf = pd.DataFrame()
+                this_csdf['Cluster Size'] = 0
+                
+            rcsdf_array.append(this_csdf.loc[:, 'Cluster Size'])
+        
+        rcsdf = pd.concat(rcsdf_array, ignore_index=True)
+
+        # run through nmin values until you reach threshold
+        n_min_found = False
+        for n_min in list(n_min_values):
+
+            # stop iterating if n_min found
+            if n_min_found:
+                continue
+            
+            # count clusters in real and random stat files
+            local_real_clusters = len(csdf.loc[csdf['Cluster Size'] >= n_min, :])
+            local_random_clusters = len(rcsdf.loc[rcsdf >= n_min]) / random_runs
+
+            # stop the run if there are no more real clusters
+            if local_real_clusters == 0:
+                optimised_n_min_values.append(n_min)
+                optimised_real_clusters.append(local_real_clusters)
+                optimised_random_clusters.append(local_random_clusters)
+                print(f"TPR cannot be reached for {xml_file}")
+                n_min_found = True
+                continue
+            else:
+                # calculate local True Positive Ratio
+                local_tpr = (local_real_clusters - local_random_clusters) / (local_real_clusters)
+
+                # check if the ratio satisfies our threshold
+                if local_tpr >= confidence_threshold:
+                    optimised_n_min_values.append(n_min)
+                    optimised_real_clusters.append(local_real_clusters)
+                    optimised_random_clusters.append(local_random_clusters)
+                    print(f"{xml_file} | Nmin:{n_min} | TPR: {round(local_tpr, 2)}\t(real:{local_real_clusters} | random:{round(local_random_clusters)})")
+                    n_min_found = True
+        
+        if not n_min_found:
+            optimised_n_min_values.append(max(n_min_values))
+            optimised_real_clusters.append(local_real_clusters)
+            optimised_random_clusters.append(local_random_clusters)
+        
+    return optimised_n_min_values, optimised_real_clusters, optimised_random_clusters
