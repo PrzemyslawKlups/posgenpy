@@ -1,0 +1,23 @@
+[project]
+name = "posgenpy"
+version = "0.2.0"
+description = "Pure-Python APT cluster-search analysis (no posgen/libatomprobe dependency)"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "pandas",
+    "scikit-learn",
+    "scipy",
+    "alphashape",
+    "plotly",
+    "matplotlib",
+    "tqdm",
+    "pyarrow",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["posgenpy"]

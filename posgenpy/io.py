@@ -200,7 +200,14 @@ def get_ion_colours_from_rrng(rrng_df):
 
 
 def assign_rrng_to_pos(pos_df, rrng_df):
-    """Label each atom in pos_df with its ion name + colour, by mc range."""
+    """Label each atom in pos_df with its ion name + colour, by mc range.
+
+    Ranges are tested in file order and the FIRST match wins, matching
+    libatomprobe's `RangeFile::getIonID` (`src/io/ranges.cpp:2871`), which
+    returns on its first hit. Bounds are inclusive at both ends. This only
+    matters for range files with overlapping ranges - posgen does not reject
+    those, it just takes the lowest-indexed match.
+    """
 
     pos_df = pos_df.copy()
 
@@ -208,6 +215,7 @@ def assign_rrng_to_pos(pos_df, rrng_df):
     pos_df["color"] = None
 
     mc = pos_df["mc"].to_numpy()
+    unassigned = np.ones(len(pos_df), dtype=bool)
 
     for low, high, ion, color in zip(
         rrng_df["mc_begin"],
@@ -216,9 +224,10 @@ def assign_rrng_to_pos(pos_df, rrng_df):
         rrng_df["color"],
     ):
 
-        mask = (mc >= low) & (mc <= high)
+        mask = (mc >= low) & (mc <= high) & unassigned
 
         pos_df.loc[mask, "ion"] = ion
         pos_df.loc[mask, "color"] = color
+        unassigned &= ~mask
 
     return pos_df

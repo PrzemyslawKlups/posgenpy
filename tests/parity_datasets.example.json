@@ -1,0 +1,37 @@
+[
+  {
+    "name": "MNSP_tip_A_top_order6",
+    "pos": "/path/to/SAMPLE.POS",
+    "rrng": "/path/to/SAMPLE.RRNG",
+    "cluster_pos": "/path/to/SAMPLE_dmax0.5_order_6_cluster.pos",
+    "clusterid_pos": "/path/to/SAMPLE_dmax0.5_order_6_clusterID.pos",
+    "sizedist": "/path/to/SAMPLE_dmax0.5_order_6_sizedist.txt",
+    "params": {
+      "core_species": [
+        "Ni",
+        "Mn",
+        "Si",
+        "Cu",
+        "Fm"
+      ],
+      "envelope_species": [
+        "Mo",
+        "Fe",
+        "C",
+        "Cr",
+        "P"
+      ],
+      "Dmax": 0.5,
+      "order": 6,
+      "N_min": 2,
+      "envelope_radius": 0.25,
+      "d_erosion": 0.25
+    },
+    "expected": {
+      "n_clustered": 45194,
+      "n_clusters": 1244,
+      "n_core": 28387,
+      "n_bulk": 16807
+    }
+  }
+]

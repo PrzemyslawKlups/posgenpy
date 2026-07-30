@@ -54,10 +54,16 @@ def run_parameter_sweep(
     verbose: bool = False,
 ) -> list:
     """
-    Sweep either `order` (k, at a fixed dmax) or `dmax` (at a fixed order),
+    Sweep either `order` (at a fixed dmax) or `dmax` (at a fixed order),
     running a full real+relabelled cluster search (run_relabel_sweep) at each
-    swept value. The KDTree over all atom positions is built once here and
-    reused across every swept value and every relabel run.
+    swept value.
+
+    `order` is posgen's knn / Order throughout - the same number that appears
+    in a posgen run's `_dmax0.5_order_N` filename - so a sweep over
+    [3, 4, 5, 6, 7, 8] lines up directly with posgen runs of those orders.
+
+    The KDTree over all atom positions is built once here and reused across
+    every swept value and every relabel run.
 
     If envelope_radius / d_erosion are not given, they default to
     (current dmax value) / 2 for each swept value, matching the previous
@@ -104,7 +110,7 @@ def run_parameter_sweep(
 
         entry = run_relabel_sweep(
             pos_df, rrng_df, core_ions, bulk_ions,
-            dmax=this_dmax, k=this_order, n_min=n_min,
+            dmax=this_dmax, order=this_order, n_min=n_min,
             envelope_radius=this_envelope_radius, d_erosion=this_d_erosion,
             n_relabel_runs=n_relabel_runs, run_name=run_name,
             output_dir=output_dir, relabel_seed=relabel_seed,
@@ -127,7 +133,51 @@ def run_parameter_sweep(
     return manifest
 
 
-def _load_sweep_sizes(sweep_manifest: list) -> dict:
+SIZE_METRICS = ("core", "total", "total_excluding")
+
+
+def _cluster_sizes(stats, size_metric, entry, exclude_ions, core_species=None):
+    """Reduce a per-cluster stats table to the size series being thresholded.
+
+    posgen reports two different notions of "cluster size" and the old
+    workflow used both: its `sizedist.txt` counts core+border atoms
+    (`Cluster Size(core)`), which is what the real-cluster-count graphs were
+    filtered on, while the old `optimise_n_min` read a `Cluster Size` column
+    that the notebook had built as all ions minus an excluded matrix element.
+    Thresholding the wrong one shifts every curve upwards, increasingly so at
+    larger n_min.
+    """
+    if stats.empty:
+        return pd.Series(dtype=int)
+
+    if size_metric == "total":
+        return stats["size"]
+
+    if size_metric == "core":
+        if "size_core" not in stats.columns:
+            named = core_species or entry.get("core_species", [])
+            core = [c for c in named if c in stats.columns]
+            if not core:
+                raise ValueError(
+                    "size_metric='core' needs a size_core column or per-ion "
+                    f"columns; {entry.get('run_name', '?')} has neither. It was "
+                    "written by an older version - pass core_species=[...], "
+                    "re-run that sweep, or use size_metric='total'."
+                )
+            return stats[core].sum(axis=1)
+        return stats["size_core"]
+
+    if size_metric == "total_excluding":
+        drop = [c for c in (exclude_ions or []) if c in stats.columns]
+        return stats["size"] - stats[drop].sum(axis=1) if drop else stats["size"]
+
+    raise ValueError(f"size_metric must be one of {SIZE_METRICS}")
+
+
+def _load_sweep_sizes(
+    sweep_manifest: list, size_metric: str = "core", exclude_ions: list = None,
+    core_species: list = None, need_random: bool = True,
+) -> dict:
     """Load each swept value's real + random per-cluster sizes into memory.
 
     Cheap: rows = clusters (tens-hundreds), not atoms.
@@ -137,17 +187,23 @@ def _load_sweep_sizes(sweep_manifest: list) -> dict:
 
     for entry in sweep_manifest:
         real_stats = pd.read_parquet(entry["real_cluster_stats_path"])
-        real_sizes = (
-            real_stats["size"] if "size" in real_stats.columns else pd.Series(dtype=int)
+        real_sizes = _cluster_sizes(
+            real_stats, size_metric, entry, exclude_ions, core_species
         )
 
-        random_dir = Path(entry["random_dir"])
-        frames = [
-            pd.read_parquet(p)["size"] for p in sorted(random_dir.glob("run_*.parquet"))
-        ]
-        random_sizes = (
-            pd.concat(frames, ignore_index=True) if frames else pd.Series(dtype=int)
-        )
+        if need_random:
+            random_dir = Path(entry["random_dir"])
+            frames = [
+                _cluster_sizes(
+                    pd.read_parquet(p), size_metric, entry, exclude_ions, core_species
+                )
+                for p in sorted(random_dir.glob("run_*.parquet"))
+            ]
+            random_sizes = (
+                pd.concat(frames, ignore_index=True) if frames else pd.Series(dtype=int)
+            )
+        else:
+            random_sizes = pd.Series(dtype=int)
 
         data[entry["swept_value"]] = {
             "real_sizes": real_sizes,
@@ -162,17 +218,27 @@ def optimise_n_min(
     sweep_manifest: list,
     n_min_values=np.arange(1, 500, 1),
     confidence_threshold: float = 0.95,
+    size_metric: str = "core",
+    exclude_ions: list = None,
+    core_species: list = None,
 ) -> tuple:
     """
     For each swept value, find the smallest n_min at which the true-positive
     ratio (real clusters - mean random clusters) / real clusters reaches
     confidence_threshold, using each run's saved per-cluster sizes.
 
+    `size_metric` selects what n_min is compared against - "core" (posgen's
+    `Cluster Size(core)`, core+border atoms), "total" (every atom), or
+    "total_excluding" with `exclude_ions` (the old notebook's `Cluster Size`,
+    which excluded the matrix element, typically Fe).
+
     Returns (optimised_n_min_values, optimised_real_clusters, optimised_random_clusters),
     one entry per swept value in sweep_manifest, in order.
     """
 
-    data = _load_sweep_sizes(sweep_manifest)
+    data = _load_sweep_sizes(
+        sweep_manifest, size_metric, exclude_ions, core_species
+    )
 
     optimised_n_min_values = []
     optimised_real_clusters = []
@@ -224,10 +290,17 @@ def plot_real_cluster_ratio_across_swept_param(
     threshold: float = 0.95,
     graph_alpha: float = 0.6,
     figsize: tuple = (9, 5),
+    size_metric: str = "core",
+    exclude_ions: list = None,
+    core_species: list = None,
 ):
-    """Plot (N_real - N_random)/N_real vs swept parameter, for each n_min."""
+    """Plot (N_real - N_random)/N_real vs swept parameter, for each n_min.
 
-    data = _load_sweep_sizes(sweep_manifest)
+    `size_metric` defaults to "core" - posgen's `Cluster Size(core)` - so the
+    curves match the equivalent posgen-era graph. See `optimise_n_min`.
+    """
+
+    data = _load_sweep_sizes(sweep_manifest, size_metric, exclude_ions)
     swept_values = sorted(data.keys())
 
     colors = plt.cm.viridis(np.linspace(0, 1, len(n_min_values)))
@@ -276,10 +349,19 @@ def plot_real_clusters_across_swept_param(
     volume: float = 0,
     graph_alpha: float = 0.7,
     figsize: tuple = (9, 5),
+    size_metric: str = "core",
+    exclude_ions: list = None,
+    core_species: list = None,
 ):
-    """Plot real cluster count (or number density, if volume given) vs swept parameter."""
+    """Plot real cluster count (or number density, if volume given) vs swept parameter.
 
-    data = _load_sweep_sizes(sweep_manifest)
+    `size_metric` defaults to "core" - posgen's `Cluster Size(core)`, the
+    quantity its `sizedist.txt` reports - so these curves match the
+    equivalent posgen-era graph. Passing "total" counts every atom in the
+    cluster instead, which keeps more clusters at every n_min.
+    """
+
+    data = _load_sweep_sizes(sweep_manifest, size_metric, exclude_ions)
     swept_values = sorted(data.keys())
     show_volume = volume != 0
 

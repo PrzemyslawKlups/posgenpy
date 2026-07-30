@@ -41,6 +41,13 @@ from .viz import (
     show_clusters_in_pos,
     compare_selected_clusters_across_param,
 )
+from .parity import (
+    load_posgen_clustering,
+    compare_clusterings,
+    run_engine_variant,
+    variant_matrix,
+    ParityReport,
+)
 
 __all__ = [
     "read_pos_to_df",
@@ -71,4 +78,9 @@ __all__ = [
     "not_in_hull",
     "show_clusters_in_pos",
     "compare_selected_clusters_across_param",
+    "load_posgen_clustering",
+    "compare_clusterings",
+    "run_engine_variant",
+    "variant_matrix",
+    "ParityReport",
 ]
