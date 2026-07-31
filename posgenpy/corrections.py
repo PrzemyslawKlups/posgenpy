@@ -153,13 +153,46 @@ def remove_edge_clusters(
     return stats
 
 
-def summarise_unclustered(clustered_atoms_df: pd.DataFrame) -> pd.DataFrame:
+def summarise_unclustered(
+    clustered_atoms_df: pd.DataFrame, ion_formula_map: dict = None
+) -> pd.DataFrame:
     """One-row summary of ranged atoms that ended up unclustered (cluster_id == -1),
     replacing posgen's separate `_unclustered-stats.txt` file for
     get_cluster_metrics' matrix atom count.
+
+    `size` is that count. With `ion_formula_map` (see io.build_ion_formula_map)
+    a column per element is added too, credited per-element exactly as
+    `analyse_clusters` does - which is what the matrix composition is read off,
+    and what lets `deconvolute_Fm_clusters` be applied to the matrix as well as
+    to the clusters. Without it, the columns are the raw ion labels.
     """
-    n_unclustered = int((clustered_atoms_df["cluster_id"] == -1).sum())
-    return pd.DataFrame({"size": [n_unclustered]})
+
+    unclustered = clustered_atoms_df.loc[clustered_atoms_df["cluster_id"] == -1]
+    summary = pd.DataFrame({"size": [len(unclustered)]})
+
+    if "ion" not in clustered_atoms_df.columns:
+        return summary
+
+    counts = unclustered["ion"].value_counts()
+
+    if ion_formula_map is None:
+        for ion, n_ions in counts.items():
+            summary[ion] = n_ions
+        return summary
+
+    element_counts = {}
+    for ion, n_ions in counts.items():
+        for element, per_ion_count in ion_formula_map.get(ion, {ion: 1}).items():
+            element_counts[element] = (
+                element_counts.get(element, 0) + n_ions * per_ion_count
+            )
+
+    for element in sorted(
+        {e for formula in ion_formula_map.values() for e in formula}
+    ):
+        summary[element] = element_counts.get(element, 0)
+
+    return summary
 
 
 def find_knn_cluster_distance(cluster_stats_df: pd.DataFrame) -> pd.DataFrame:

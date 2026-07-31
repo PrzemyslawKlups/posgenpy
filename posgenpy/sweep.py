@@ -221,6 +221,7 @@ def optimise_n_min(
     size_metric: str = "core",
     exclude_ions: list = None,
     core_species: list = None,
+    verbose: bool = True,
 ) -> tuple:
     """
     For each swept value, find the smallest n_min at which the true-positive
@@ -232,9 +233,14 @@ def optimise_n_min(
     "total_excluding" with `exclude_ions` (the old notebook's `Cluster Size`,
     which excluded the matrix element, typically Fe).
 
+    `verbose` prints the chosen n_min per swept value; pass False when calling
+    this per cell of a grid, where the running commentary is noise.
+
     Returns (optimised_n_min_values, optimised_real_clusters, optimised_random_clusters),
     one entry per swept value in sweep_manifest, in order.
     """
+
+    vprint = print if verbose else lambda *args, **kwargs: None
 
     data = _load_sweep_sizes(
         sweep_manifest, size_metric, exclude_ions, core_species
@@ -260,14 +266,14 @@ def optimise_n_min(
             )
 
             if local_real_clusters == 0:
-                print(f"TPR cannot be reached for {entry['run_name']}")
+                vprint(f"TPR cannot be reached for {entry['run_name']}")
                 n_min_found = True
                 break
 
             local_tpr = (local_real_clusters - local_random_clusters) / local_real_clusters
 
             if local_tpr >= confidence_threshold:
-                print(
+                vprint(
                     f"{entry['run_name']} | Nmin:{n_min} | TPR: {round(local_tpr, 2)}"
                     f"\t(real:{local_real_clusters} | random:{round(local_random_clusters)})"
                 )
@@ -387,11 +393,18 @@ def plot_real_clusters_across_swept_param(
     return fig, ax
 
 
+# Everything analyse_clusters emits that is NOT a per-element atom count.
+# `size_core` belongs here: it is a count of atoms already counted under their
+# own element columns, so leaving it out double-counts every core-species atom
+# in the composition denominator below.
 _CLUSTER_STATS_METADATA_COLUMNS = [
-    "cluster_id", "x", "y", "z", "size", "radius_of_gyration", "aspect_ratio",
-    "principal_axis_1", "principal_axis_2", "principal_axis_3",
+    "cluster_id", "x", "y", "z", "size", "size_core", "radius_of_gyration",
+    "aspect_ratio", "principal_axis_1", "principal_axis_2", "principal_axis_3",
     "bbox_x", "bbox_y", "bbox_z", "bbox_volume", "cluster_density",
     "equivalent_spherical_radius",
+    # added by corrections.remove_edge_clusters / find_knn_cluster_distance
+    "convexhull_volume", "convexhull_area", "is_edge_cluster",
+    "closest_cluster_distance", "closest_cluster_id",
 ]
 
 
