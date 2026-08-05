@@ -34,9 +34,20 @@ grid = pgp.run_fast_grid_sweep(
     output_dir="my_output/", prefix="mytip", n_jobs=-1,
 )
 
-# the whole plane at once: optimal n_min and cluster counts per (order, dmax)
+# the whole plane at once: one row per (order, dmax) - optimal n_min, cluster
+# counts, the largest cluster, and how close the closest pair of clusters got
 summary = pgp.summarise_grid(grid)
-pgp.plot_grid_heatmap(summary, value="optimal_n_min").show()
+pgp.plot_grid_heatmap(summary, value="optimal_n_min", colorscale="Purples").show()
+
+# every real cluster of every cell, clipped at that cell's own n_min, with its
+# nearest neighbour measured inside its own cell
+grid_clusters = pgp.load_grid_cluster_table(grid, n_min=summary)
+pgp.plot_distribution_grid(grid_clusters, value="size_core", log_x=True).show()
+
+# and what happened between neighbouring cells: raising dmax merges clusters,
+# raising the order splits them - where either takes off is the elbow
+splits = pgp.track_cluster_splits(grid, axis="order", n_min=summary)
+pgp.plot_split_tracking(splits, value="n_new_from_splits").show()
 
 # ...or read the grid along either axis - these take the same manifest shape
 # run_parameter_sweep returns, so every sweep function below works unchanged
@@ -52,11 +63,19 @@ sizes = pgp.load_sweep_size_table(dmax_sweep)
 pgp.plot_size_distribution(sizes, x="dmax", y="size_core").show()
 ```
 
-See [`../PosgenPy_Full_Analysis_Example_PythonOnly.ipynb`](../PosgenPy_Full_Analysis_Example_PythonOnly.ipynb)
-for the full workflow: order sweep, dmax sweep, n_min optimisation, final
-cluster search + corrections (edge-cluster removal, Fm-peak deconvolution,
-per-tip metrics), composition/violin/3D plots, and a CV01 parameter-sensitivity
-check.
+Two example notebooks, same engine, different way in:
+
+- [`../PosgenPy_Full_Analysis_Example_PythonOnly.ipynb`](../PosgenPy_Full_Analysis_Example_PythonOnly.ipynb)
+  — one parameter at a time: order sweep, dmax sweep, n_min optimisation, final
+  cluster search + corrections (edge-cluster removal, Fm-peak deconvolution,
+  per-tip metrics), composition/violin/3D plots, and a CV01
+  parameter-sensitivity check.
+- [`../PosgenPy_Grid_Analysis_Example_PythonOnly.ipynb`](../PosgenPy_Grid_Analysis_Example_PythonOnly.ipynb)
+  — the whole (order x dmax) plane first: six heatmaps of it, size and
+  nearest-neighbour-distance distributions as ridgelines over both axes,
+  split/merge tracking between neighbouring cells, individual clusters in 3D
+  and across an axis, then the same final run with its clusters drawn as
+  see-through alpha shapes.
 
 ## Installation
 
@@ -147,14 +166,23 @@ that capitalised `"True"` as true, and `False` is what reproduces its output.
   `run_fast_parameter_sweep` (drop-in for `run_parameter_sweep`),
   `run_fast_grid_sweep` (both axes at once), plus `select_sweep` (one
   row/column of a grid), `summarise_grid` (the whole plane, one row per cell),
-  `load_sweep_size_table` and `validate_fast_grid`.
+  `load_sweep_size_table`, `load_grid_cluster_table` (every real cluster of
+  every cell, clipped at that cell's n_min), `track_cluster_splits` (what
+  became of what between neighbouring cells) and `validate_fast_grid`.
 - **`corrections.py`** - edge-cluster detection (alpha-shape boundary),
-  Fm-peak deconvolution, per-cluster nearest-neighbour distance, and
+  Fm-peak deconvolution, per-cluster nearest-neighbour distance (raw and
+  normalised by the two clusters' radii), per-cluster alpha-shape meshes, and
   `get_cluster_metrics` (volume fraction, number density, etc.).
 - **`viz.py`** - `plot_size_distribution` (violin + every cluster as its own
-  hoverable point) and 3D visualisation of selected clusters. Every plot's
-  tooltip leads with the cluster's `cluster_id`, so a cluster picked out of a
-  size distribution can be typed straight into `show_clusters_in_pos`.
+  hoverable point), `plot_distribution_grid` (the same distributions as
+  ridgelines over both grid axes at once), `plot_grid_heatmap`,
+  `plot_split_tracking`, `plot_cluster_alpha_shapes` (see-through cluster
+  surfaces, edge clusters apart) and 3D visualisation of selected clusters -
+  one at a time, or across a whole swept axis. Every plot's tooltip leads with
+  the cluster's `cluster_id`, so a cluster picked out of a size distribution
+  can be typed straight into `show_clusters_in_pos`; tooltips otherwise show
+  `DEFAULT_HOVER_COLUMNS` rather than every column a stats table carries
+  (`hover="all"` for the lot, or a list of your own).
 - **`parity.py`** - compare a run against real posgen output
   (`load_posgen_clustering`, `compare_clusterings`, `variant_matrix`). Use it
   whenever you change the clustering code:
@@ -328,6 +356,52 @@ parameters: cluster composition, volume and volume fraction all depend on the
 envelope and erosion. Run the full pipeline once, at the end, on the parameters
 this picks - which is what the example notebook does.
 
+## Reading a finished grid
+
+Three functions read the plane the sweep wrote, and between them they are what
+the grid notebook is built from.
+
+**`summarise_grid`** — one row per cell. Beyond the n_min columns it carries
+`n_clusters_all` (before n_min), `max_cluster_size`, and how close the closest
+pair of clusters got, both in nm (`min_cluster_distance`) and normalised by the
+two clusters' radii (`min_cluster_distance_norm`). All of them are measured
+over the clusters that survive **that cell's own optimal n_min**, since the
+ones below it are exactly the noise the n_min was chosen to remove. Every
+column is a heatmap: `plot_grid_heatmap(summary, value=..., colorscale=...)`.
+
+The normalised distance is `min_j d_ij / (R_i + R_j)`, so **below 1 the two
+clusters' equivalent spheres overlap** — one precipitate reported as two, or
+two about to merge at the next dmax. It is exact rather than a k-nearest
+approximation: a large cluster past the k-th neighbour can crowd a small one
+more than its nearest neighbour does, so anything that could still win gets a
+second, wider search (`corrections.find_knn_cluster_distance`).
+
+**`load_grid_cluster_table`** — every real cluster of every cell as one row,
+clipped at each cell's own n_min (pass the `summarise_grid` frame and it uses
+`optimal_n_min` per cell), with the nearest-neighbour distance measured *within
+its own cell*, because a cluster's neighbours are different at every parameter
+pair. `viz.plot_distribution_grid` draws it as a ridgeline — one subplot row
+per order, one filled density curve per dmax, with every cluster still drawn as
+its own hoverable point.
+
+**`track_cluster_splits`** — every cell clusters the *same atoms*, so
+consecutive cells can be compared atom by atom rather than by cluster counts.
+That is the difference between "5 fewer clusters because five precipitates
+merged into two" and "because five dissolved below n_min": same count,
+different clustering. Per step it reports `n_split`, `n_new_from_splits`,
+`n_merged`, `n_lost_to_merges`, `n_dissolved`, `n_created`, and *which*
+clusters split (`split_cluster_ids`, ids in the earlier cell, so they can be
+plotted).
+
+The two axes do opposite things, and that is a property of the algorithm rather
+than of any dataset: **raising dmax adds links**, so clusters merge but never
+split; **raising the order removes core points**, so a cluster held together by
+a thin neck of core atoms falls into two. Where either count takes off is the
+elbow — past it the parameter is not refining the clustering, it is
+rearranging it. `viz.plot_split_tracking` plots that, and since each row also
+carries the order/dmax of the cell it *arrives at*, `plot_grid_heatmap` takes
+the same table.
+
 ## Memory discipline for relabelling
 
 Because Python (not posgen's C++ internals) now does the relabelling itself,
@@ -355,6 +429,16 @@ positive ratio" by default).
 **relabelling / randomisation** - shuffling the pos file's `mc` column and
 re-clustering, to build a random-cluster-count baseline for the same
 dataset and parameters.
+
+**normalised cluster separation** - the distance between two cluster centres
+divided by the sum of their radii (`equivalent_spherical_radius` by default).
+Below 1 the two clusters' equivalent spheres overlap; above ~2 they are clearly
+separate. Written `closest_cluster_distance_norm` per cluster and
+`min_cluster_distance_norm` per grid cell.
+
+**alpha shape** - the surface traced by rolling a probe sphere of radius
+`1/alpha` over a cluster's atoms. Unlike a convex hull it keeps concavities, so
+a dumbbell that should have been two clusters looks like one.
 
 ## Authors
 

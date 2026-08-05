@@ -85,8 +85,9 @@ from scipy.sparse.csgraph import connected_components
 from scipy.spatial import cKDTree
 
 from .cluster import analyse_clusters
+from .corrections import find_knn_cluster_distance
 from .io import build_ion_formula_map
-from .sweep import optimise_n_min
+from .sweep import _cluster_sizes, optimise_n_min
 
 __all__ = [
     "extract_core_atoms",
@@ -99,6 +100,8 @@ __all__ = [
     "select_sweep",
     "summarise_grid",
     "load_sweep_size_table",
+    "load_grid_cluster_table",
+    "track_cluster_splits",
     "validate_fast_grid",
 ]
 
@@ -955,21 +958,39 @@ def summarise_grid(
     size_metric: str = "core",
     exclude_ions: list = None,
     core_species: list = None,
+    cluster_metrics: bool = True,
+    radius_column: str = "equivalent_spherical_radius",
 ) -> pd.DataFrame:
     """One row per (order, dmax) cell: the numbers you pick a parameter pair on.
 
     Reading the grid as two 1D slices (`select_sweep`) answers "which dmax, at
     this order" and "which order, at this dmax" separately. This answers them
-    together, which is the actual question when both are free.
-
-    Columns: `order`, `dmax`, `optimal_n_min` (smallest n_min whose true-positive
-    ratio reaches `confidence_threshold`), `n_real_clusters` and
-    `n_random_clusters` at that n_min, and the `true_positive_ratio` it reached.
-    `n_min_reached` is False where no n_min in `n_min_values` got there - the
-    cell is then reported at the largest n_min tried, and should not be chosen.
+    together, which is the actual question when both are free. Every column is
+    a heatmap over the plane (`viz.plot_grid_heatmap`).
 
     The threshold rule itself is `sweep.optimise_n_min`, called once per cell,
-    so there is exactly one definition of it in the package.
+    so there is exactly one definition of it in the package:
+
+    | column | |
+    |---|---|
+    | `optimal_n_min` | smallest n_min whose true-positive ratio reaches `confidence_threshold` |
+    | `n_real_clusters`, `n_random_clusters` | cluster counts at that n_min |
+    | `true_positive_ratio` | the ratio it reached |
+    | `n_min_reached` | False where no n_min in `n_min_values` got there - the cell is then reported at the largest n_min tried, and should not be chosen |
+
+    With `cluster_metrics` (the default) each cell's real clusters are read
+    too, giving the shape of what those parameters actually found:
+
+    | column | |
+    |---|---|
+    | `n_clusters_all` | every cluster the search found, before n_min - mostly noise at a loose (order, dmax) |
+    | `max_cluster_size` | the largest surviving cluster, in the same size metric n_min is applied to. A cell where this jumps is one where neighbouring precipitates have started merging into one |
+    | `min_cluster_distance` | closest centre-to-centre distance between two surviving clusters, nm |
+    | `min_cluster_distance_norm` | the same distance normalised by the two clusters' radii (`radius_column`). **Below 1 their equivalent spheres overlap** - one precipitate reported as two |
+
+    Both distances are measured over the clusters that survive that cell's own
+    `optimal_n_min`, since the sub-threshold ones are exactly the noise the
+    n_min was chosen to remove.
 
     >>> summary = summarise_grid(grid)
     >>> summary.pivot(index="order", columns="dmax", values="optimal_n_min")
@@ -991,22 +1012,370 @@ def summarise_grid(
             verbose=False,
         )
 
-        rows.append(
-            {
-                "order": entry["order"],
-                "dmax": entry["dmax"],
-                "optimal_n_min": n_min[0],
-                "n_real_clusters": real[0],
-                "n_random_clusters": random[0],
-                "true_positive_ratio": (
-                    (real[0] - random[0]) / real[0] if real[0] else np.nan
-                ),
-                "n_min_reached": n_min[0] < max(n_min_values),
-                "run_name": entry["run_name"],
-            }
-        )
+        row = {
+            "order": entry["order"],
+            "dmax": entry["dmax"],
+            "optimal_n_min": n_min[0],
+            "n_real_clusters": real[0],
+            "n_random_clusters": random[0],
+            "true_positive_ratio": (
+                (real[0] - random[0]) / real[0] if real[0] else np.nan
+            ),
+            "n_min_reached": n_min[0] < max(n_min_values),
+        }
+
+        if cluster_metrics:
+            row.update(
+                _cell_cluster_metrics(
+                    entry, n_min[0], size_metric, exclude_ions, core_species,
+                    radius_column,
+                )
+            )
+
+        row["run_name"] = entry["run_name"]
+        rows.append(row)
 
     return pd.DataFrame(rows).sort_values(["order", "dmax"], ignore_index=True)
+
+
+def _cell_cluster_metrics(
+    entry, n_min, size_metric, exclude_ions, core_species, radius_column
+):
+    """Size and separation of one cell's real clusters, at its own n_min."""
+
+    stats = pd.read_parquet(entry["real_cluster_stats_path"])
+    sizes = _cluster_sizes(stats, size_metric, entry, exclude_ions, core_species)
+
+    metrics = {
+        "n_clusters_all": len(stats),
+        "max_cluster_size": np.nan,
+        "min_cluster_distance": np.nan,
+        "min_cluster_distance_norm": np.nan,
+    }
+
+    kept = stats.loc[sizes >= n_min] if len(stats) else stats
+    if kept.empty:
+        return metrics
+
+    metrics["max_cluster_size"] = float(sizes.loc[kept.index].max())
+
+    if len(kept) < 2 or not {"x", "y", "z"} <= set(kept.columns):
+        return metrics
+
+    neighbours = find_knn_cluster_distance(kept, radius_column=radius_column)
+    metrics["min_cluster_distance"] = float(
+        neighbours["closest_cluster_distance"].min()
+    )
+    if "closest_cluster_distance_norm" in neighbours.columns:
+        metrics["min_cluster_distance_norm"] = float(
+            neighbours["closest_cluster_distance_norm"].min()
+        )
+
+    return metrics
+
+
+def _n_min_lookup(n_min, column="optimal_n_min"):
+    """Turn any of the accepted n_min specs into a `(order, dmax) -> int` call.
+
+    Accepts a single number, a `{(order, dmax): n_min}` mapping, a
+    `summarise_grid` frame (whose `optimal_n_min` is then used per cell), or
+    None for "keep every cluster".
+    """
+
+    if n_min is None:
+        return lambda order, dmax: 1
+
+    if isinstance(n_min, pd.DataFrame):
+        if column not in n_min.columns:
+            raise ValueError(
+                f"{column!r} is not a column of this summary "
+                f"({list(n_min.columns)}); pass n_min_column=..."
+            )
+        table = {
+            (int(row["order"]), float(row["dmax"])): int(row[column])
+            for _, row in n_min.iterrows()
+        }
+        return lambda order, dmax: table.get((int(order), float(dmax)), 1)
+
+    if isinstance(n_min, dict):
+        table = {(int(o), float(d)): int(n) for (o, d), n in n_min.items()}
+        return lambda order, dmax: table.get((int(order), float(dmax)), 1)
+
+    value = int(n_min)
+    return lambda order, dmax: value
+
+
+def load_grid_cluster_table(
+    manifest: list,
+    n_min=None,
+    n_min_column: str = "optimal_n_min",
+    radius_column: str = "equivalent_spherical_radius",
+    neighbour_distances: bool = True,
+) -> pd.DataFrame:
+    """Every real cluster of every cell as one tidy row, clipped at its n_min.
+
+    `load_sweep_size_table` is the same idea for the *sizes* of real and
+    randomised runs together. This one is about the real clusters as objects:
+    it keeps the centroid, shape and composition columns `analyse_clusters`
+    wrote, applies each cell's own n_min, and (by default) attaches each
+    cluster's nearest-neighbour distance measured **within its own cell** -
+    which is the only way that distance means anything, since a cluster's
+    neighbours are different at every (order, dmax).
+
+    Parameters
+    ----------
+    n_min : int, dict, DataFrame or None
+        A single n_min for every cell, a `{(order, dmax): n_min}` mapping, or
+        a `summarise_grid` frame - in which case each cell is clipped at its
+        own `n_min_column` (`optimal_n_min` by default). None keeps every
+        cluster.
+    neighbour_distances : bool
+        Attach `closest_cluster_distance` / `closest_cluster_id` and, where
+        `radius_column` exists, the radius-normalised
+        `closest_cluster_distance_norm` (below 1 = overlapping equivalent
+        spheres). See `corrections.find_knn_cluster_distance`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per surviving cluster, with `order`, `dmax` and the `n_min`
+        that was applied prepended - ready for `viz.plot_size_distribution`,
+        `viz.plot_distribution_grid`, or a `groupby(["order", "dmax"])`.
+    """
+
+    lookup = _n_min_lookup(n_min, n_min_column)
+    frames = []
+
+    for entry in manifest:
+        order, dmax = entry["order"], entry["dmax"]
+        cell_n_min = lookup(order, dmax)
+
+        stats = pd.read_parquet(entry["real_cluster_stats_path"])
+        if "size_core" in stats.columns:
+            stats = stats.loc[stats["size_core"] >= cell_n_min]
+        stats = stats.reset_index(drop=True)
+
+        if neighbour_distances and not stats.empty:
+            stats = find_knn_cluster_distance(stats, radius_column=radius_column)
+
+        stats.insert(0, "order", order)
+        stats.insert(1, "dmax", dmax)
+        stats.insert(2, "n_min", cell_n_min)
+        frames.append(stats)
+
+    if not frames:
+        return pd.DataFrame()
+
+    return pd.concat(frames, ignore_index=True)
+
+
+def track_cluster_splits(
+    manifest: list,
+    axis: str = "dmax",
+    n_min=None,
+    n_min_column: str = "optimal_n_min",
+    min_shared_atoms: int = 1,
+) -> pd.DataFrame:
+    """How the clusters of one cell turn into the clusters of the next.
+
+    Every cell of the grid clusters the *same atoms*, so consecutive cells can
+    be compared atom by atom rather than by cluster counts alone. That is what
+    tells the difference between "5 fewer clusters" because five precipitates
+    merged into two, and because five dissolved below n_min - the count is the
+    same, the clustering is not.
+
+    Walks each line of the grid along `axis` ("dmax" at fixed order, or
+    "order" at fixed dmax) and compares each consecutive pair:
+
+    | column | |
+    |---|---|
+    | `n_split` | clusters of the earlier cell whose atoms land in 2+ clusters of the later one |
+    | `n_new_from_splits` | how many *extra* clusters those splits created (a cluster becoming 3 counts 2) |
+    | `n_merged` | clusters of the later cell that swallowed 2+ earlier ones |
+    | `n_lost_to_merges` | how many clusters those merges absorbed |
+    | `n_dissolved` | earlier clusters with no surviving counterpart at all |
+    | `n_created` | later clusters made entirely of atoms that were unclustered before |
+
+    Raising dmax adds links, so it merges (`n_merged` grows, `n_split` stays
+    near zero); raising the order takes core points away, so it splits. Where
+    a step suddenly splits or merges a lot of clusters is the elbow the
+    parameter should not be pushed past - plot it with
+    `viz.plot_split_tracking`, or as a heatmap over the plane, since each row
+    carries the `order`/`dmax` of the cell it *arrives at*.
+
+    Parameters
+    ----------
+    n_min : int, dict, DataFrame or None
+        Clusters below this are ignored on both sides of every comparison -
+        the same spec `load_grid_cluster_table` takes, so passing a
+        `summarise_grid` frame compares each cell at its own optimal n_min.
+        Leave as None and every 2-atom noise cluster counts as a split.
+    min_shared_atoms : int
+        How many atoms a cluster must contribute to another before it counts
+        as having become it. 1 counts every shared atom; raising it ignores
+        single border atoms drifting between neighbours.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per consecutive pair, with `order`/`dmax` of the later cell
+        (and `from_order`/`from_dmax` of the earlier one).
+    """
+
+    if axis not in ("order", "dmax"):
+        raise ValueError('axis must be "order" or "dmax"')
+
+    fixed = "dmax" if axis == "order" else "order"
+    lookup = _n_min_lookup(n_min, n_min_column)
+
+    missing = [e["run_name"] for e in manifest if "real_clustered_atoms_path" not in e]
+    if missing:
+        raise ValueError(
+            "tracking splits needs each cell's per-atom labels, and "
+            f"{len(missing)} cells have none (e.g. {missing[0]}). Re-run the "
+            "sweep with save_real_atoms=True."
+        )
+
+    lines = {}
+    for entry in manifest:
+        lines.setdefault(entry[fixed], []).append(entry)
+
+    rows = []
+
+    for fixed_value, entries in sorted(lines.items()):
+        entries = sorted(entries, key=lambda e: e[axis])
+
+        previous = None
+        for entry in entries:
+            labels = _cell_atom_labels(entry, lookup(entry["order"], entry["dmax"]))
+
+            if previous is not None:
+                rows.append(
+                    {
+                        "axis": axis,
+                        fixed: fixed_value,
+                        "from_order": previous["entry"]["order"],
+                        "from_dmax": previous["entry"]["dmax"],
+                        "order": entry["order"],
+                        "dmax": entry["dmax"],
+                        "from_value": previous["entry"][axis],
+                        "to_value": entry[axis],
+                        **_compare_clusterings(
+                            previous["labels"], labels, min_shared_atoms
+                        ),
+                    }
+                )
+
+            previous = {"entry": entry, "labels": labels}
+
+    columns = ["axis", "from_value", "to_value", "from_order", "from_dmax",
+               "order", "dmax"]
+    table = pd.DataFrame(rows)
+    if table.empty:
+        return table
+
+    return table[columns + [c for c in table.columns if c not in columns]]
+
+
+def _cell_atom_labels(entry, n_min):
+    """One cell's per-atom cluster labels, clipped at `n_min`, in atom order.
+
+    Every cell clustered the same atoms in the same order (the real tip's
+    core-species atoms, taken in pos-file order), so these arrays line up
+    positionally. `ionIdx` is checked where both cells carry it, so a table
+    written by some other route cannot be compared silently against the wrong
+    atoms.
+    """
+
+    from pyarrow.parquet import read_schema
+
+    path = entry["real_clustered_atoms_path"]
+    wanted = [c for c in ("ionIdx", "cluster_id") if c in set(read_schema(path).names)]
+    atoms = pd.read_parquet(path, columns=wanted)
+
+    return {
+        # ids are kept as they are, not renumbered, so a cluster that shows up
+        # here as splitting can be looked up in that cell's stats table
+        "labels": _clip_small_clusters(atoms["cluster_id"].to_numpy(), n_min),
+        "ionIdx": atoms["ionIdx"].to_numpy() if "ionIdx" in atoms.columns else None,
+    }
+
+
+def _clip_small_clusters(labels, n_min):
+    """Unclustered everything below `n_min` atoms, leaving the other ids alone."""
+
+    if n_min <= 1:
+        return labels
+
+    clustered = labels != -1
+    ids, counts = np.unique(labels[clustered], return_counts=True)
+
+    out = labels.copy()
+    out[np.isin(labels, ids[counts < n_min])] = -1
+    return out
+
+
+def _compare_clusterings(before, after, min_shared_atoms):
+    """Split/merge counts between two labellings of the same atoms."""
+
+    a, b = before["labels"], after["labels"]
+
+    if len(a) != len(b):
+        raise ValueError(
+            f"the two cells label different numbers of atoms ({len(a)} vs "
+            f"{len(b)}); they are not the same dataset"
+        )
+    if (
+        before["ionIdx"] is not None
+        and after["ionIdx"] is not None
+        and not np.array_equal(before["ionIdx"], after["ionIdx"])
+    ):
+        raise ValueError(
+            "the two cells' atom tables are not in the same order; they cannot "
+            "be compared atom by atom"
+        )
+
+    n_from = int(len(np.unique(a[a != -1])))
+    n_to = int(len(np.unique(b[b != -1])))
+
+    both = (a != -1) & (b != -1)
+    result = {
+        "n_clusters_from": n_from,
+        "n_clusters_to": n_to,
+        "n_atoms_from": int((a != -1).sum()),
+        "n_atoms_to": int((b != -1).sum()),
+        "n_atoms_shared": int(both.sum()),
+    }
+
+    if not both.any():
+        result.update(
+            n_split=0, n_new_from_splits=0, n_merged=0, n_lost_to_merges=0,
+            n_dissolved=n_from, n_created=n_to,
+            split_cluster_ids=(), merged_cluster_ids=(),
+        )
+        return result
+
+    pairs = pd.DataFrame({"from": a[both], "to": b[both]}).value_counts()
+    pairs = pairs[pairs >= min_shared_atoms].reset_index(name="n_atoms")
+
+    children = pairs.groupby("from")["to"].nunique()
+    parents = pairs.groupby("to")["from"].nunique()
+
+    result.update(
+        n_split=int((children > 1).sum()),
+        n_new_from_splits=int((children - 1).clip(lower=0).sum()),
+        n_merged=int((parents > 1).sum()),
+        n_lost_to_merges=int((parents - 1).clip(lower=0).sum()),
+        # counted against the clusters that exist, not against the pairs:
+        # a cluster nothing survived of has no row in `children` at all
+        n_dissolved=n_from - int(len(children)),
+        n_created=n_to - int(len(parents)),
+        # which ones, so a cluster that split can be pulled up in 3D: ids in
+        # the earlier cell for splits, in the later one for merges
+        split_cluster_ids=tuple(sorted(children.index[children > 1].tolist())),
+        merged_cluster_ids=tuple(sorted(parents.index[parents > 1].tolist())),
+    )
+    return result
 
 
 def load_sweep_size_table(

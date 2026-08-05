@@ -7,11 +7,12 @@ per-atom and per-cluster tables - unlike the old file-based pipeline, there is
 no separate reconciliation step needed between posgen's cluster-stats.txt and
 clusterID.pos files.
 """
+import warnings
+
 import numpy as np
 import pandas as pd
 import alphashape
-from scipy.spatial import ConvexHull, Delaunay
-from sklearn.neighbors import NearestNeighbors
+from scipy.spatial import ConvexHull, Delaunay, cKDTree
 from tqdm import tqdm
 
 
@@ -195,27 +196,237 @@ def summarise_unclustered(
     return summary
 
 
-def find_knn_cluster_distance(cluster_stats_df: pd.DataFrame) -> pd.DataFrame:
-    """Attach each cluster's nearest-neighbour cluster distance/ID (by centroid)."""
+def find_knn_cluster_distance(
+    cluster_stats_df: pd.DataFrame,
+    radius_column: str = "equivalent_spherical_radius",
+) -> pd.DataFrame:
+    """Attach each cluster's nearest-neighbour cluster distance/ID (by centroid).
+
+    Adds two columns, as before:
+
+    - `closest_cluster_distance` - centre-to-centre distance to the nearest
+      other cluster, in nm;
+    - `closest_cluster_id` - which cluster that is.
+
+    A raw centre-to-centre distance mixes two effects: how far apart the
+    clusters are, and how big they are. Two 4 nm precipitates 3 nm apart are
+    touching; two 0.5 nm ones 3 nm apart are nowhere near each other. So when
+    `radius_column` is present (`analyse_clusters` writes
+    `equivalent_spherical_radius`; `radius_of_gyration` also works), two more
+    columns are added:
+
+    - `closest_cluster_distance_norm` - the smallest `d_ij / (R_i + R_j)` over
+      every other cluster j. **Below 1 the two clusters' equivalent spheres
+      overlap**, i.e. a single precipitate the search has split in two, or two
+      that a larger dmax will merge. Above ~2 they are clearly separate.
+    - `closest_cluster_id_norm` - the cluster that ratio is against, which is
+      not always the nearest one by raw distance: a large cluster further away
+      can crowd a small one more than its nearest neighbour does.
+
+    The normalised minimum is exact, not a k-nearest-neighbours approximation:
+    a cluster beyond the k-th neighbour can only beat the running best ratio
+    `t` if it lies within `t * (R_i + R_max)`, so any cluster whose k-th
+    neighbour falls inside that radius gets a second, wider search.
+    """
 
     this_df = cluster_stats_df.copy()
+    has_radius = radius_column in this_df.columns
 
     if len(this_df) < 2:
         this_df["closest_cluster_distance"] = np.nan
         this_df["closest_cluster_id"] = np.nan
+        if has_radius:
+            this_df["closest_cluster_distance_norm"] = np.nan
+            this_df["closest_cluster_id_norm"] = np.nan
         return this_df
 
-    xyz = this_df.loc[:, ["x", "y", "z"]].to_numpy()
-
-    nbrs = NearestNeighbors(n_neighbors=2, algorithm="ball_tree").fit(xyz)
-    d, indices = nbrs.kneighbors(xyz)
-
+    xyz = this_df.loc[:, ["x", "y", "z"]].to_numpy(dtype=float)
     cluster_id_list = this_df["cluster_id"].to_numpy()
 
-    this_df["closest_cluster_distance"] = d[:, 1]
+    tree = cKDTree(xyz)
+    # 32 neighbours is plenty for the raw distance (which needs 1) and covers
+    # the normalised search in all but the pathological cases refined below
+    k = min(len(this_df), 33)
+    distances, indices = tree.query(xyz, k=k)
+
+    this_df["closest_cluster_distance"] = distances[:, 1]
     this_df["closest_cluster_id"] = cluster_id_list[indices[:, 1]]
 
+    if not has_radius:
+        return this_df
+
+    radii = np.nan_to_num(this_df[radius_column].to_numpy(dtype=float), nan=0.0)
+
+    neighbour_d = distances[:, 1:]
+    neighbour_i = indices[:, 1:]
+    radii_sum = radii[:, None] + radii[neighbour_i]
+    ratios = np.divide(
+        neighbour_d, radii_sum,
+        out=np.full_like(neighbour_d, np.inf), where=radii_sum > 0,
+    )
+
+    rows = np.arange(len(this_df))
+    best = np.argmin(ratios, axis=1)
+    best_ratio = ratios[rows, best]
+    best_index = neighbour_i[rows, best]
+
+    if k < len(this_df):
+        # a cluster past the k-th neighbour can still win, but only if it is
+        # big enough: it must sit within best_ratio * (R_i + R_max)
+        search_radius = best_ratio * (radii + radii.max())
+        for i in np.flatnonzero(search_radius > distances[:, -1]):
+            candidates = np.asarray(
+                tree.query_ball_point(xyz[i], search_radius[i]), dtype=int
+            )
+            candidates = candidates[candidates != i]
+            if not len(candidates):
+                continue
+
+            candidate_sum = radii[i] + radii[candidates]
+            candidate_ratio = np.divide(
+                np.linalg.norm(xyz[candidates] - xyz[i], axis=1), candidate_sum,
+                out=np.full(len(candidates), np.inf), where=candidate_sum > 0,
+            )
+            closest = int(np.argmin(candidate_ratio))
+            if candidate_ratio[closest] < best_ratio[i]:
+                best_ratio[i] = candidate_ratio[closest]
+                best_index[i] = candidates[closest]
+
+    this_df["closest_cluster_distance_norm"] = np.where(
+        np.isfinite(best_ratio), best_ratio, np.nan
+    )
+    this_df["closest_cluster_id_norm"] = cluster_id_list[best_index]
+
     return this_df
+
+
+def cluster_alpha_shapes(
+    clustered_atoms_df: pd.DataFrame,
+    cluster_ids=None,
+    alpha: float = 1.0,
+    min_atoms: int = 4,
+    progress: bool = False,
+) -> dict:
+    """Alpha-shape surface mesh of each cluster, for 3D display.
+
+    The alpha shape is the shape the cluster search actually found - the
+    convex hull rounds off every concavity, which is exactly where a
+    dumbbell-shaped "cluster" that should have been two shows itself.
+
+    Parameters
+    ----------
+    clustered_atoms_df : pandas.DataFrame
+        Per-atom table with x/y/z and cluster_id (`run_clustering` output, or
+        a `*_real_clustered_atoms.parquet` file).
+    cluster_ids : sequence, optional
+        Which clusters to mesh. Defaults to every cluster in the table.
+    alpha : float
+        The alpha-shape parameter, in **inverse nm**: the probe sphere rolled
+        over the atoms has radius `1/alpha`. `1/dmax` is a good starting point
+        (a probe the size of the linking distance). Too large and the surface
+        tears into holes; `alpha=0` gives the convex hull.
+    min_atoms : int
+        Clusters with fewer atoms than this are skipped - 4 non-coplanar
+        points are the minimum a closed 3D surface can be built from.
+
+    Returns
+    -------
+    dict[cluster_id, dict]
+        Per cluster: `vertices` (n,3), `faces` (m,3), `method` ("alpha" or
+        "hull" where the alpha shape came out degenerate), `watertight`,
+        `volume` and `area` (nm3/nm2, NaN when the mesh is not watertight).
+    """
+
+    if cluster_ids is None:
+        cluster_ids = clustered_atoms_df.loc[
+            clustered_atoms_df["cluster_id"] != -1, "cluster_id"
+        ].unique()
+    cluster_ids = list(cluster_ids)
+
+    # only the requested clusters' atoms are grouped: on a real tip the
+    # unclustered ones are millions of rows nothing here ever looks at
+    selected = clustered_atoms_df.loc[
+        clustered_atoms_df["cluster_id"].isin(cluster_ids)
+    ]
+    grouped = {
+        cid: group[["x", "y", "z"]].to_numpy(dtype=float)
+        for cid, group in selected.groupby("cluster_id")
+    }
+
+    meshes = {}
+    skipped = 0
+
+    for cid in tqdm(cluster_ids, disable=not progress, desc="alpha shapes"):
+        points = grouped.get(cid)
+        if points is None or len(points) < max(4, min_atoms):
+            skipped += 1
+            continue
+
+        mesh = _alpha_shape_mesh(points, alpha)
+        if mesh is None:
+            skipped += 1
+            continue
+
+        meshes[cid] = mesh
+
+    if skipped:
+        warnings.warn(
+            f"{skipped} of {len(cluster_ids)} clusters have no usable surface "
+            f"at alpha={alpha} (too few atoms, or coplanar) and are not meshed"
+        )
+
+    return meshes
+
+
+def _alpha_shape_mesh(points, alpha):
+    """One cluster's alpha-shape mesh, falling back to its convex hull.
+
+    `alphashape` returns a 2D shapely polygon for alpha=0 rather than a 3D
+    hull, and a shredded (non-closed) surface when alpha is too large for the
+    atom spacing, so both cases are caught here and answered with the convex
+    hull - a shape that always exists - rather than with nothing.
+    """
+
+    shape = None
+    if alpha > 0:
+        try:
+            shape = alphashape.alphashape(points, float(alpha))
+        except Exception:
+            shape = None
+
+    faces = np.asarray(getattr(shape, "faces", []), dtype=int)
+
+    if len(faces) >= 4:
+        vertices = np.asarray(shape.vertices, dtype=float)
+        watertight = bool(getattr(shape, "is_watertight", False))
+        return {
+            "vertices": vertices,
+            "faces": faces,
+            "method": "alpha",
+            "watertight": watertight,
+            "volume": abs(float(shape.volume)) if watertight else np.nan,
+            "area": float(shape.area) if watertight else np.nan,
+        }
+
+    try:
+        hull = ConvexHull(points)
+    except Exception:
+        return None
+
+    # ConvexHull indexes into the full point array; re-index onto its own
+    # vertices so the mesh carries no unused points
+    used = np.unique(hull.simplices)
+    remap = np.full(len(points), -1, dtype=int)
+    remap[used] = np.arange(len(used))
+
+    return {
+        "vertices": points[used],
+        "faces": remap[hull.simplices],
+        "method": "hull",
+        "watertight": True,
+        "volume": float(hull.volume),
+        "area": float(hull.area),
+    }
 
 
 def get_cluster_metrics(

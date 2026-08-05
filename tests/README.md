@@ -2,7 +2,7 @@
 
 Two tiers.
 
-## `test_cluster_semantics.py` / `test_fast_sweep.py` / `test_corrections.py` — fast, run anywhere
+## `test_cluster_semantics.py` / `test_fast_sweep.py` / `test_corrections.py` / `test_grid_analysis.py` — fast, run anywhere
 
 Synthetic point sets of a few dozen atoms, one assertion per rule read out of
 posgen's `clusterOps.cpp`. No external data, runs in ~1.5 s:
@@ -51,8 +51,26 @@ and that `n_min` passed to `run_clustering` clips core+border counts *before*
 the envelope, so a cluster under the threshold cannot first collect a bulk shell
 that lifts it back over.
 
+`test_grid_analysis.py` covers what is read *off* a finished grid, for the
+`PosgenPy_Grid_Analysis_Example_PythonOnly.ipynb` workflow: the per-cell numbers
+the heatmaps colour, the per-cluster table the distributions draw, and the
+atom-by-atom comparison of neighbouring cells. Three of its assertions are the
+ones worth keeping:
+
+- `test_normalised_separation_is_exact_not_a_knn_approximation` — the
+  radius-normalised cluster separation is checked against the brute-force
+  all-pairs answer on a spread of radii, because the k-nearest search it starts
+  from is only a first guess: a large cluster past the k-th neighbour can crowd
+  a small one more than its nearest neighbour does.
+- `test_raising_dmax_merges_and_never_splits` — DBSCAN is monotone in dmax, so
+  a split reported along that axis would mean the sweep itself had gone wrong.
+  The order axis is checked the other way round, on a tip with a dumbbell in it.
+- `test_split_counts_add_up` — every cluster on each side of a step is
+  accounted for exactly once, so `n_split` / `n_merged` / `n_dissolved` /
+  `n_created` cannot quietly double-count the same cluster.
+
 ```bash
-pytest tests/test_fast_sweep.py
+pytest tests/test_fast_sweep.py tests/test_grid_analysis.py
 ```
 
 ## `test_posgen_parity.py` — slow, needs the reference datasets
