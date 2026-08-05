@@ -12,3 +12,4 @@ pygenpy_output_pythononly/
 # parity_datasets.example.json is the committed template
 tests/parity_datasets.json
 .pytest_cache/
+PosgenPy_Grid_Analysis_Example_PythonOnly copy.ipynb
