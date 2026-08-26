@@ -52,7 +52,8 @@ DEFAULT_HOVER_COLUMNS = [
 # ...and the same idea for a heatmap cell, whose "row" is one grid cell
 DEFAULT_GRID_HOVER_COLUMNS = [
     "optimal_n_min", "n_real_clusters", "n_random_clusters",
-    "true_positive_ratio", "n_min_reached",
+    "true_positive_ratio", "n_min_reached", "n_min_status",
+    "true_positive_ratio_atoms", "percolation_verdict", "giant_fraction",
     "n_clusters_all", "max_cluster_size",
     "min_cluster_distance", "min_cluster_distance_norm",
     "n_clusters_from", "n_clusters_to", "n_split", "n_new_from_splits",

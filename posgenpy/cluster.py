@@ -695,8 +695,13 @@ def run_relabel_sweep(
     real_atoms_path = output_dir / f"{run_name}_real_clustered_atoms.parquet"
     real_stats_path = output_dir / f"{run_name}_real_cluster_stats.parquet"
 
+    # ranged once here rather than only inside the branch below, because the
+    # manifest records n_core_atoms whether or not the real run was cached -
+    # it is the denominator sweep.percolation_report needs
+    labelled = assign_rrng_to_pos(pos_df, rrng_df)
+    n_core_atoms = int(labelled["ion"].isin(core_ions).sum())
+
     if not (real_atoms_path.exists() and real_stats_path.exists()):
-        labelled = assign_rrng_to_pos(pos_df, rrng_df)
         clustered = run_clustering(
             labelled, core_ions, bulk_ions, dmax, order, n_min,
             envelope_radius, d_erosion,
@@ -709,7 +714,9 @@ def run_relabel_sweep(
         )
         clustered.to_parquet(real_atoms_path, index=False)
         stats.to_parquet(real_stats_path, index=False)
-        del labelled, clustered, stats
+        del clustered, stats
+
+    del labelled
 
     mc_values = pos_df["mc"].to_numpy()
     random_paths = []
@@ -755,4 +762,5 @@ def run_relabel_sweep(
         "real_cluster_stats_path": str(real_stats_path),
         "random_dir": str(random_dir),
         "n_relabel_runs": n_relabel_runs,
+        "n_core_atoms": n_core_atoms,
     }

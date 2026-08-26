@@ -58,6 +58,12 @@ pgp.plot_real_cluster_ratio_across_swept_param(dmax_sweep, "dmax", n_min_values)
 
 optimal_n_min, real_clusters, random_clusters = pgp.optimise_n_min(dmax_sweep, n_min_values=range(1, 200))
 
+# ...and check the answer means anything: the n_min search has three exits, and
+# a randomised control whose solute network percolates satisfies the threshold
+# without measuring a thing (see "When the randomised control percolates")
+pgp.n_min_report(dmax_sweep, n_min_values=range(1, 200))
+pgp.percolation_report(dmax_sweep)
+
 # every cluster of every cell as one row, for hoverable size distributions
 sizes = pgp.load_sweep_size_table(dmax_sweep)
 pgp.plot_size_distribution(sizes, x="dmax", y="size_core").show()
@@ -151,6 +157,66 @@ Several behaviours are switchable, so a run can be reproduced either way:
 `include_unranged` defaults to `False` even though the reference runs' XML says
 `<unranged foroutput="True" forstats="True"/>`: posgen evidently did not parse
 that capitalised `"True"` as true, and `False` is what reproduces its output.
+
+## When the randomised control percolates
+
+`optimise_n_min` compares **counts of clusters** — the true-positive ratio is
+`(N_real − ⟨N_rand⟩) / N_real`. A percolating network contributes exactly
+**one** cluster no matter how much solute it swallowed. So at a `dmax` large
+enough that the solute network of the *randomised* tip spans the cell,
+`⟨N_rand⟩` collapses towards 1, the ratio sails past the threshold, and a
+confident-looking `n_min` comes back from a parameter region with no
+discriminating power at all. On one MD dump it made a strictly more permissive
+order look strictly more discriminating — orders 1–3 reporting a *lower* n_min
+than order 5, which cannot be true.
+
+That is a parameter choice, not a bug in the search: the giant cluster is the
+correct output of a maximum-separation search at those parameters. What was
+missing is anything that noticed.
+
+```python
+pgp.percolation_report(order_sweep)     # one row per swept value
+pgp.n_min_report(order_sweep, n_min_values=range(1, 200))
+```
+
+`percolation_report` reads the largest cluster of each *control* run out of the
+per-cluster size tables the sweep already wrote — so it **runs on existing
+sweeps with nothing re-run** — and divides it by the tip's core-species atoms
+(`n_core_atoms` in the manifest; older manifests fall back to the solute the
+control actually clustered, which is labelled as such because it inflates the
+fraction at high order). The `verdict` is `"ok"` / `"near-threshold"` /
+`"percolating"`, cut at 0.10 / 0.30 by default. Measured regimes separate
+cleanly around those — sub-critical ≤ 0.01, critical ≈ 0.21, percolating
+0.65–0.88 — but they are keyword arguments, not physics.
+
+`n_min_report` is `optimise_n_min` with its reasoning shown. The search has
+three exits and the returned integer used to be the same shape for all three:
+
+| `status` | |
+|---|---|
+| `"reached"` | the threshold was genuinely crossed — the only one that is an answer |
+| `"unreachable"` | the real clusters ran out first; no n_min in *any* range can get there |
+| `"range_exhausted"` | no n_min in `n_min_values` got there |
+
+Only a `"reached"` row carries an `n_min`; the other two are `NaN`. It also
+carries `true_positive_ratio_atoms` — the same real-vs-control comparison
+counted in **atoms** rather than clusters, over every cluster in the saved
+tables. A percolating control cannot hide inside it as a single cluster, so
+where it sits at or below zero the control clusters as much solute as the tip
+does and nothing chosen there means anything.
+`plot_atom_ratio_across_swept_param` draws it.
+
+Both failure modes reach a caller that is not reading either report:
+`optimise_n_min` now raises a `UserWarning` on the two failure exits (its
+`verbose=False` is exactly how `summarise_grid` calls it, so a printed message
+was no message at all); `summarise_grid` takes `n_min_reached` from the status
+instead of re-deriving it from the returned integer, and adds `n_min_status`,
+`percolation_verdict`, `giant_fraction` and `true_positive_ratio_atoms`
+columns; and the two real-vs-random sweep plots shade the swept values whose
+control has percolated.
+
+Nothing about the cluster search itself changed, and `optimise_n_min` keeps its
+signature and 3-tuple return.
 
 ## Modules
 

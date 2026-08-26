@@ -88,6 +88,45 @@ def make_tip(n_matrix=4000, n_clusters=12, cluster_size=40, seed=0):
     )
 
 
+def make_percolating_tip(
+    n_atoms=20000, solute_fraction=0.15, n_clusters=0, cluster_size=80, seed=0
+):
+    """A uniform solid solution dense enough that the solute network percolates
+    at the dmax under test. With the default `n_clusters=0` nothing is planted,
+    so every cluster found is background - which is the case `make_tip` cannot
+    produce and the one that breaks a count-based real-vs-random comparison.
+
+    `n_clusters` plants blobs in that background as well, giving a tip with
+    genuine precipitates *and* a percolating matrix: real signal that the
+    cluster counts cannot see past the giant cluster to find.
+    """
+    rng = np.random.default_rng(seed)
+
+    positions = rng.uniform(-10, 10, size=(n_atoms, 3))
+    n_solute = int(n_atoms * solute_fraction)
+    mc = np.full(n_atoms, 30.5)  # Fe
+    mc[:n_solute] = rng.choice([10.5, 20.5], size=n_solute)  # Cu / Ni
+    rng.shuffle(mc)
+
+    if n_clusters:
+        centres = rng.uniform(-8, 8, size=(n_clusters, 3))
+        blobs = np.concatenate(
+            [centre + rng.normal(0, 0.3, size=(cluster_size, 3)) for centre in centres]
+        )
+        positions = np.concatenate([positions, blobs])
+        mc = np.concatenate([mc, rng.choice([10.5, 20.5], size=len(blobs))])
+
+    return pd.DataFrame(
+        {
+            "ionIdx": np.arange(1, len(positions) + 1),
+            "x": positions[:, 0],
+            "y": positions[:, 1],
+            "z": positions[:, 2],
+            "mc": mc,
+        }
+    )
+
+
 @pytest.fixture(scope="module")
 def tip():
     return make_tip(), make_rrng()
@@ -805,3 +844,261 @@ def test_heatmap_blanks_cells_that_never_reached_the_threshold():
         dtype=float,
     )
     assert np.nanmax(unmasked) == 199
+
+
+# ---------------------------------------------------------------------------
+# The randomised control percolating, and the sweep noticing
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def percolating_sweep(tmp_path_factory):
+    """An order sweep at a dmax where the control's solute network spans the
+    tip at low order and is sub-critical at high order.
+
+    No planted clusters at all, so anything either dataset finds is background:
+    the whole range of the diagnostic in one manifest.
+    """
+    pos_df = make_percolating_tip()
+    output_dir = tmp_path_factory.mktemp("percolating")
+
+    return run_fast_grid_sweep(
+        pos_df, make_rrng(), CORE_IONS,
+        orders=[1, 2, 3, 4, 5, 6, 7, 8], dmax_values=[1.4],
+        bulk_ions=BULK_IONS, n_relabel_runs=2,
+        output_dir=output_dir, prefix="perc", verbose=False,
+    )
+
+
+@pytest.fixture(scope="module")
+def percolating_sweep_with_clusters(tmp_path_factory):
+    """The same, with genuine precipitates planted in the percolating matrix."""
+    pos_df = make_percolating_tip(solute_fraction=0.12, n_clusters=8)
+    output_dir = tmp_path_factory.mktemp("percolating_blobs")
+
+    return run_fast_grid_sweep(
+        pos_df, make_rrng(), CORE_IONS,
+        orders=[1, 2, 3, 4, 5, 6, 7, 8], dmax_values=[1.3],
+        bulk_ions=BULK_IONS, n_relabel_runs=2,
+        output_dir=output_dir, prefix="blobs", verbose=False,
+    )
+
+
+def test_percolation_report_flags_a_uniform_solid_solution(percolating_sweep):
+    """At an order this permissive the control is one tip-spanning cluster.
+    Every cluster count downstream is then arithmetic on a broken control, and
+    this is the only thing in the package that says so."""
+
+    report = pgp.percolation_report(percolating_sweep, warn=False)
+    at_order_3 = report.loc[report["swept_value"] == 3].iloc[0]
+
+    assert at_order_3["verdict"] == "percolating"
+    assert at_order_3["giant_fraction"] > 0.5
+    assert at_order_3["denominator"] == "n_core_atoms"
+    # the mean hides how bad a single run gets; the max is why it is reported
+    assert (
+        at_order_3["largest_random_cluster_max"]
+        >= at_order_3["largest_random_cluster"]
+    )
+
+
+def test_percolation_report_is_ok_for_planted_clusters(grid):
+    """The case the sweep is for: a dilute matrix with real precipitates in it.
+    A guard that fires here would be worse than no guard."""
+    manifest, _ = grid
+
+    for order in (5, 7):
+        report = pgp.percolation_report(select_sweep(manifest, dmax=0.4), warn=False)
+        assert set(report["verdict"]) == {"ok"}
+
+
+def test_percolation_report_warns_so_it_survives_verbose_false(percolating_sweep):
+    with pytest.warns(UserWarning, match="randomised control"):
+        pgp.percolation_report(percolating_sweep)
+
+
+def test_raising_the_order_walks_the_control_through_the_threshold(percolating_sweep):
+    """Pins the mechanism, not just the flag: the order filter is what takes
+    the control back below the percolation threshold, and the diagnostic has to
+    follow it the whole way down."""
+
+    report = pgp.percolation_report(percolating_sweep, warn=False).sort_values(
+        "swept_value"
+    )
+    fractions = report["giant_fraction"].to_numpy()
+
+    # removing core points can only ever shrink the giant cluster
+    assert np.all(np.diff(fractions) <= 1e-12)
+    assert fractions[0] > 0.30 and fractions[-1] < 0.10
+    assert list(report["verdict"])[0] == "percolating"
+    assert list(report["verdict"])[-1] == "ok"
+
+
+def test_n_min_report_marks_an_unreachable_threshold(percolating_sweep):
+    """Real clusters running out is not the search succeeding, but the legacy
+    3-tuple reports the two identically."""
+
+    with pytest.warns(UserWarning, match="never reached"):
+        report = pgp.n_min_report(percolating_sweep, n_min_values=range(1, 400))
+
+    unreachable = report.loc[report["status"] == "unreachable"]
+    assert not unreachable.empty
+    assert unreachable["n_min"].isna().all()
+    assert (unreachable["n_real_clusters"] == 0).all()
+
+    # ...and the legacy value it would have returned is still there, unchanged
+    legacy, _, _ = pgp.optimise_n_min(
+        percolating_sweep, n_min_values=range(1, 400), verbose=False
+    )
+    assert list(report["n_min_returned"]) == legacy
+
+
+def test_n_min_report_marks_an_exhausted_range(percolating_sweep):
+    with pytest.warns(UserWarning, match="never reached"):
+        report = pgp.n_min_report(percolating_sweep, n_min_values=range(1, 5))
+
+    exhausted = report.loc[report["status"] == "range_exhausted"]
+    assert not exhausted.empty
+    assert exhausted["n_min"].isna().all()
+    assert (exhausted["n_min_returned"] == 4).all()
+
+
+def test_n_min_report_is_the_same_search_optimise_n_min_runs(grid):
+    """The wrapper must not drift from the report it wraps."""
+    dmax_sweep = select_sweep(grid[0], order=7)
+
+    report = pgp.n_min_report(dmax_sweep, n_min_values=range(1, 60), warn=False)
+    n_min, real, random = pgp.optimise_n_min(
+        dmax_sweep, n_min_values=range(1, 60), verbose=False
+    )
+
+    assert list(report["n_min_returned"]) == n_min
+    assert list(report["n_real_clusters"]) == real
+    assert list(report["n_random_clusters"]) == random
+
+
+def test_summarise_grid_does_not_report_an_unreachable_cell_as_reached(
+    percolating_sweep,
+):
+    """The regression: `n_min_reached` used to be re-derived from the returned
+    integer (`n_min < max(n_min_values)`), which is true for a cell that ran out
+    of real clusters. Such a cell was reported as a pass, at a plausible-looking
+    optimal_n_min, with nothing but a NaN in a column no one filters on."""
+
+    with pytest.warns(UserWarning):
+        summary = summarise_grid(percolating_sweep, n_min_values=range(1, 400))
+
+    unreachable = summary.loc[summary["n_min_status"] == "unreachable"]
+    assert not unreachable.empty
+    assert (unreachable["optimal_n_min"] < 400).all()  # the old heuristic's "pass"
+    assert not unreachable["n_min_reached"].any()
+
+    # the column is now exactly the status, not a re-derivation of it
+    assert (summary["n_min_reached"] == (summary["n_min_status"] == "reached")).all()
+
+
+def test_summarise_grid_carries_the_percolation_verdict(percolating_sweep, grid):
+    """Both failure modes have to be visible in the one table a cell is
+    actually picked from."""
+
+    with pytest.warns(UserWarning):
+        summary = summarise_grid(percolating_sweep, n_min_values=range(1, 400))
+
+    assert {"percolation_verdict", "giant_fraction", "true_positive_ratio_atoms"} <= set(
+        summary.columns
+    )
+    assert "percolating" in set(summary["percolation_verdict"])
+
+    clean = summarise_grid(grid[0], n_min_values=range(1, 60), warn=False)
+    assert set(clean["percolation_verdict"]) == {"ok"}
+
+
+def test_percolation_report_runs_on_a_manifest_without_n_core_atoms(
+    percolating_sweep,
+):
+    """n_core_atoms was added after the sweeps that need this diagnostic most
+    were written. Without it the denominator falls back to the solute the
+    control actually clustered, which is labelled as such because it inflates
+    the fraction at high order."""
+
+    older = [
+        {k: v for k, v in entry.items() if k != "n_core_atoms"}
+        for entry in percolating_sweep
+    ]
+
+    report = pgp.percolation_report(older, warn=False)
+
+    assert set(report["denominator"]) == {"clustered_solute"}
+    assert report["giant_fraction"].notna().all()
+    # the percolating end is still caught, which is the point of the fallback
+    assert report.loc[report["swept_value"] == 1, "verdict"].iloc[0] == "percolating"
+
+
+def test_the_fallback_denominator_does_not_flag_a_handful_of_atoms():
+    """`clustered_solute` is a small number when the control clusters almost
+    nothing, so a 12-atom "giant" cluster is 100% of it. The absolute floor is
+    what stops that reading as a percolating network."""
+    from posgenpy.sweep import _percolation_rows
+
+    data = {
+        1: {
+            "real_sizes": pd.Series([20, 8]),
+            "random_sizes": pd.Series([12, 4, 3, 11, 5, 2]),
+            "random_runs": [pd.Series([12, 4, 3]), pd.Series([11, 5, 2])],
+            "n_runs": 2,
+        }
+    }
+    rows = _percolation_rows([{"swept_value": 1}], data, 0.10, 0.30)
+
+    assert rows[0]["giant_fraction"] > 0.5  # 11.5 of a ~18-atom denominator
+    assert rows[0]["verdict"] == "ok"
+
+
+def test_the_atom_ratio_sees_what_the_cluster_counts_cannot(
+    percolating_sweep_with_clusters,
+):
+    """The tell that the physics is fine and the count-based metric is not.
+
+    A percolating control contributes exactly one cluster however much solute
+    it swallowed, so `true_positive_ratio` can sit at or above the threshold
+    where there is no signal at all. Counted in atoms the same comparison
+    collapses to zero across the percolating orders and only becomes positive
+    once the control is sub-critical and the planted clusters are what is left.
+    """
+
+    report = pgp.n_min_report(
+        percolating_sweep_with_clusters, n_min_values=range(1, 400), warn=False
+    ).sort_values("swept_value")
+    percolation = pgp.percolation_report(
+        percolating_sweep_with_clusters, warn=False
+    ).sort_values("swept_value")
+
+    merged = report.merge(percolation[["swept_value", "verdict"]], on="swept_value")
+
+    percolating = merged.loc[merged["verdict"] == "percolating"]
+    assert not percolating.empty
+    assert (percolating["true_positive_ratio_atoms"] <= 0.01).all()
+
+    at_the_top = merged.iloc[-1]
+    assert at_the_top["verdict"] == "ok"
+    assert at_the_top["true_positive_ratio_atoms"] > 0.1
+
+
+def test_the_sweep_plots_shade_the_percolating_swept_values(percolating_sweep):
+    """A reader of the current graph has no way to see that the left of the
+    x-axis is nonsense."""
+
+    figure, ax = pgp.plot_real_cluster_ratio_across_swept_param(
+        percolating_sweep, "Order", [2, 5]
+    )
+    assert any("percolat" in str(text.get_text()) for text in ax.get_legend().get_texts())
+
+    _, clean_ax = pgp.plot_real_cluster_ratio_across_swept_param(
+        percolating_sweep, "Order", [2, 5], flag_percolation=False
+    )
+    assert not any(
+        "percolat" in str(text.get_text()) for text in clean_ax.get_legend().get_texts()
+    )
+
+    figure, ax = pgp.plot_atom_ratio_across_swept_param(percolating_sweep, "Order")
+    assert figure is not None

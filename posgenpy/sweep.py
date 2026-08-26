@@ -5,6 +5,7 @@ with an in-memory + persisted-to-disk "sweep manifest": a list of small dicts
 pointing at the parquet files run_relabel_sweep wrote for each swept value.
 """
 import json
+import warnings
 from pathlib import Path
 from time import perf_counter
 
@@ -18,8 +19,11 @@ __all__ = [
     "seconds_to_hhmmss",
     "run_parameter_sweep",
     "optimise_n_min",
+    "n_min_report",
+    "percolation_report",
     "plot_real_cluster_ratio_across_swept_param",
     "plot_real_clusters_across_swept_param",
+    "plot_atom_ratio_across_swept_param",
     "plot_cluster_composition_across_swept_param_absolute",
     "plot_cluster_composition_across_swept_param_relative",
 ]
@@ -181,6 +185,12 @@ def _load_sweep_sizes(
     """Load each swept value's real + random per-cluster sizes into memory.
 
     Cheap: rows = clusters (tens-hundreds), not atoms.
+
+    `random_sizes` pools every control run - which is what the cluster *counts*
+    want, since they are divided by `n_runs` afterwards. `random_runs` keeps the
+    same sizes split per run, because a per-run statistic (the largest cluster
+    in one control dataset - see `percolation_report`) is not recoverable from
+    the pool.
     """
 
     data = {}
@@ -203,15 +213,176 @@ def _load_sweep_sizes(
                 pd.concat(frames, ignore_index=True) if frames else pd.Series(dtype=int)
             )
         else:
+            frames = []
             random_sizes = pd.Series(dtype=int)
 
         data[entry["swept_value"]] = {
             "real_sizes": real_sizes,
             "random_sizes": random_sizes,
+            "random_runs": frames,
             "n_runs": entry["n_relabel_runs"],
         }
 
     return data
+
+
+def _atom_ratio(d):
+    """`(A_real - <A_rand>) / A_real` over every cluster in the saved tables.
+
+    Atoms, not clusters: a percolating control contributes exactly one cluster
+    no matter how much solute it swallowed, so the count-based ratio can look
+    healthy - can be *pushed past the threshold by the percolation itself* -
+    where this one is at or below zero.
+    """
+
+    atoms_real = float(d["real_sizes"].sum())
+    if not atoms_real:
+        return np.nan
+    n_runs = d["n_runs"]
+    atoms_random = float(d["random_sizes"].sum()) / n_runs if n_runs else 0.0
+    return (atoms_real - atoms_random) / atoms_real
+
+
+N_MIN_STATUSES = ("reached", "unreachable", "range_exhausted")
+
+_N_MIN_REPORT_COLUMNS = [
+    "swept_value", "run_name", "n_min", "status",
+    "n_real_clusters", "n_random_clusters",
+    "true_positive_ratio", "true_positive_ratio_atoms", "n_min_returned",
+]
+
+
+def _n_min_rows(sweep_manifest, data, n_min_values, confidence_threshold) -> list:
+    """The n_min search itself, over sizes already in memory.
+
+    One row per swept value. The search has three exits and this is the only
+    place that knows which one was taken:
+
+    | status | |
+    |---|---|
+    | `"reached"` | the true-positive ratio crossed `confidence_threshold` |
+    | `"unreachable"` | the real clusters ran out first, so no n_min in *any* range can get there |
+    | `"range_exhausted"` | no n_min in `n_min_values` got there |
+
+    `n_min` is NaN unless the status is `"reached"` - a threshold that was never
+    crossed has no answer. `n_min_returned` is the integer the legacy
+    `optimise_n_min` 3-tuple reports for that cell regardless of status, kept so
+    the two agree exactly.
+    """
+
+    n_min_values = list(n_min_values)
+    if not n_min_values:
+        raise ValueError("n_min_values is empty; nothing to search")
+
+    rows = []
+
+    for entry in sweep_manifest:
+        d = data[entry["swept_value"]]
+        real_sizes, random_sizes, n_runs = d["real_sizes"], d["random_sizes"], d["n_runs"]
+
+        status = "range_exhausted"
+        n_min = int(max(n_min_values))
+        local_real_clusters = 0
+        local_random_clusters = 0.0
+
+        for candidate in n_min_values:
+
+            local_real_clusters = int((real_sizes >= candidate).sum())
+            local_random_clusters = float(
+                (random_sizes >= candidate).sum() / n_runs if n_runs else 0.0
+            )
+
+            if local_real_clusters == 0:
+                status, n_min = "unreachable", int(candidate)
+                break
+
+            local_tpr = (local_real_clusters - local_random_clusters) / local_real_clusters
+
+            if local_tpr >= confidence_threshold:
+                status, n_min = "reached", int(candidate)
+                break
+
+        rows.append(
+            {
+                "swept_value": entry["swept_value"],
+                "run_name": entry.get("run_name"),
+                "n_min": float(n_min) if status == "reached" else np.nan,
+                "status": status,
+                "n_real_clusters": local_real_clusters,
+                "n_random_clusters": local_random_clusters,
+                "true_positive_ratio": (
+                    (local_real_clusters - local_random_clusters) / local_real_clusters
+                    if local_real_clusters
+                    else np.nan
+                ),
+                "true_positive_ratio_atoms": _atom_ratio(d),
+                "n_min_returned": int(n_min),
+            }
+        )
+
+    return rows
+
+
+def _warn_about_n_min_statuses(rows, confidence_threshold):
+    """Surface the two failure exits even when nothing is printing.
+
+    `optimise_n_min`'s `verbose=False` is exactly how `summarise_grid` calls it,
+    so a printed message is no message at all in the case that matters most.
+    """
+
+    failed = [r for r in rows if r["status"] != "reached"]
+    if not failed:
+        return
+
+    detail = "; ".join(
+        f"{r['run_name'] or r['swept_value']}: {r['status']}" for r in failed
+    )
+    warnings.warn(
+        f"the true-positive ratio never reached {confidence_threshold} for "
+        f"{len(failed)} of {len(rows)} swept values ({detail}). The n_min "
+        "reported for those is where the search stopped, not an answer - see "
+        "n_min_report() for the status and percolation_report() for the usual "
+        "cause (a randomised control whose solute network percolates).",
+        stacklevel=3,
+    )
+
+
+def n_min_report(
+    sweep_manifest: list,
+    n_min_values=np.arange(1, 500, 1),
+    confidence_threshold: float = 0.95,
+    size_metric: str = "core",
+    exclude_ions: list = None,
+    core_species: list = None,
+    warn: bool = True,
+) -> pd.DataFrame:
+    """`optimise_n_min` with its reasoning shown: one row per swept value.
+
+    Same search, same arguments; what it adds is `status` - whether the
+    threshold was genuinely crossed (`"reached"`), the real clusters ran out
+    first (`"unreachable"`), or no n_min in `n_min_values` got there
+    (`"range_exhausted"`). Only a `"reached"` row carries an n_min; the other
+    two are NaN, because there is no answer to report.
+
+    | column | |
+    |---|---|
+    | `n_min` | smallest n_min reaching `confidence_threshold`; NaN if it never did |
+    | `status` | which of the three exits above was taken |
+    | `n_real_clusters`, `n_random_clusters` | counts where the search stopped |
+    | `true_positive_ratio` | `(N_real - <N_rand>) / N_real` there |
+    | `true_positive_ratio_atoms` | the same comparison on *atoms* - `(A_real - <A_rand>) / A_real` over every cluster in the saved tables, no n_min applied. At or below zero the control clusters as much solute as the tip does and the swept value has **no discriminating power**, whatever the count-based ratio says |
+    | `n_min_returned` | what the legacy `optimise_n_min` 3-tuple reports here |
+
+    Raises a warning for every non-`"reached"` row unless `warn=False`.
+    """
+
+    data = _load_sweep_sizes(sweep_manifest, size_metric, exclude_ions, core_species)
+    rows = _n_min_rows(sweep_manifest, data, n_min_values, confidence_threshold)
+
+    if warn:
+        _warn_about_n_min_statuses(rows, confidence_threshold)
+
+    return pd.DataFrame(rows, columns=_N_MIN_REPORT_COLUMNS)
 
 
 def optimise_n_min(
@@ -238,55 +409,228 @@ def optimise_n_min(
 
     Returns (optimised_n_min_values, optimised_real_clusters, optimised_random_clusters),
     one entry per swept value in sweep_manifest, in order.
+
+    **A returned n_min is not evidence the threshold was reached.** Two of the
+    three ways the search can end return a plausible-looking integer that means
+    "this is where I gave up": the real clusters ran out, or `n_min_values` did.
+    Both now raise a warning, and `n_min_report` - which this is a thin wrapper
+    over - names which one happened per swept value.
     """
 
     vprint = print if verbose else lambda *args, **kwargs: None
 
-    data = _load_sweep_sizes(
-        sweep_manifest, size_metric, exclude_ions, core_species
+    data = _load_sweep_sizes(sweep_manifest, size_metric, exclude_ions, core_species)
+    rows = _n_min_rows(sweep_manifest, data, n_min_values, confidence_threshold)
+
+    for row in rows:
+        if row["status"] == "unreachable":
+            vprint(f"TPR cannot be reached for {row['run_name']}")
+        elif row["status"] == "reached":
+            vprint(
+                f"{row['run_name']} | Nmin:{row['n_min_returned']} | "
+                f"TPR: {round(row['true_positive_ratio'], 2)}"
+                f"\t(real:{row['n_real_clusters']} | "
+                f"random:{round(row['n_random_clusters'])})"
+            )
+
+    _warn_about_n_min_statuses(rows, confidence_threshold)
+
+    return (
+        [row["n_min_returned"] for row in rows],
+        [row["n_real_clusters"] for row in rows],
+        [row["n_random_clusters"] for row in rows],
     )
 
-    optimised_n_min_values = []
-    optimised_real_clusters = []
-    optimised_random_clusters = []
+
+PERCOLATION_VERDICTS = ("ok", "near-threshold", "percolating", "unknown")
+
+_PERCOLATION_REPORT_COLUMNS = [
+    "swept_value", "run_name", "largest_random_cluster",
+    "largest_random_cluster_max", "giant_fraction", "denominator",
+    "denominator_atoms", "largest_real_cluster", "verdict",
+]
+
+
+def _percolation_rows(sweep_manifest, data, warn_fraction, fail_fraction) -> list:
+    """Size of the largest cluster in each randomised control, per swept value.
+
+    See `percolation_report` for what the numbers mean; this is the calculation
+    with the loading and the warning stripped out, so `summarise_grid` can run
+    it on sizes it has already read.
+    """
+
+    if not 0 < warn_fraction <= fail_fraction:
+        raise ValueError("need 0 < warn_fraction <= fail_fraction")
+
+    rows = []
 
     for entry in sweep_manifest:
         d = data[entry["swept_value"]]
-        real_sizes, random_sizes, n_runs = d["real_sizes"], d["random_sizes"], d["n_runs"]
+        runs, real_sizes = d["random_runs"], d["real_sizes"]
 
-        n_min_found = False
-        local_real_clusters = 0
-        local_random_clusters = 0.0
+        maxima = [float(sizes.max()) if len(sizes) else 0.0 for sizes in runs]
 
-        for n_min in n_min_values:
+        # the natural denominator is every core-species atom in the tip, since
+        # that is what the control's giant cluster is eating into. Manifests
+        # written before n_core_atoms existed fall back to the solute that the
+        # control actually clustered, which is smaller and shrinks with order -
+        # so the fraction it gives is inflated, and is floored below.
+        n_core_atoms = entry.get("n_core_atoms")
+        if n_core_atoms:
+            denominator = float(n_core_atoms)
+            denominator_name = "n_core_atoms"
+        else:
+            totals = [float(sizes.sum()) for sizes in runs]
+            denominator = float(np.mean(totals)) if totals else 0.0
+            denominator_name = "clustered_solute"
 
-            local_real_clusters = int((real_sizes >= n_min).sum())
-            local_random_clusters = (
-                (random_sizes >= n_min).sum() / n_runs if n_runs else 0.0
+        largest_mean = float(np.mean(maxima)) if maxima else np.nan
+        largest_max = float(np.max(maxima)) if maxima else np.nan
+        giant_fraction = largest_mean / denominator if denominator else np.nan
+
+        if not maxima or not np.isfinite(giant_fraction):
+            verdict = "unknown"
+        elif giant_fraction >= fail_fraction:
+            verdict = "percolating"
+        elif giant_fraction >= warn_fraction:
+            verdict = "near-threshold"
+        else:
+            verdict = "ok"
+
+        if verdict in ("percolating", "near-threshold") and denominator_name == "clustered_solute":
+            pooled = d["random_sizes"]
+            median = float(pooled.median()) if len(pooled) else 0.0
+            if largest_mean <= max(50.0, 5.0 * median):
+                # a "giant" cluster of 12 atoms in a control that clustered 30
+                # is the degenerate denominator talking, not a percolating network
+                verdict = "ok"
+
+        rows.append(
+            {
+                "swept_value": entry["swept_value"],
+                "run_name": entry.get("run_name"),
+                "largest_random_cluster": largest_mean,
+                "largest_random_cluster_max": largest_max,
+                "giant_fraction": giant_fraction,
+                "denominator": denominator_name,
+                "denominator_atoms": denominator,
+                "largest_real_cluster": (
+                    float(real_sizes.max()) if len(real_sizes) else 0.0
+                ),
+                "verdict": verdict,
+            }
+        )
+
+    return rows
+
+
+def percolation_report(
+    sweep_manifest: list,
+    size_metric: str = "core",
+    exclude_ions: list = None,
+    core_species: list = None,
+    warn_fraction: float = 0.10,
+    fail_fraction: float = 0.30,
+    warn: bool = True,
+) -> pd.DataFrame:
+    """Is the randomised control still a control, or has it percolated?
+
+    `optimise_n_min` compares *counts of clusters*, and a percolating network
+    contributes exactly **one** cluster however much solute it swallowed. Where
+    the control's solute network spans the tip, the comparison silently stops
+    measuring anything: `<N_rand>` collapses towards 1, the true-positive ratio
+    sails past the threshold, and a confident-looking n_min comes back from a
+    parameter region with no discriminating power at all. The usual cause is a
+    `dmax` large enough that the mean solute-solute degree in the *randomised*
+    tip exceeds the ~2.7 continuum percolation threshold - a parameter choice,
+    not a bug in the search, but one nothing used to detect.
+
+    This reads it off the per-cluster size tables the sweep already wrote, so it
+    **runs on existing sweeps with nothing re-run**.
+
+    | column | |
+    |---|---|
+    | `largest_random_cluster` | mean over control runs of the largest cluster |
+    | `largest_random_cluster_max` | the worst single run - near the threshold the run-to-run spread is several-fold, and the mean hides it |
+    | `giant_fraction` | `largest_random_cluster / denominator_atoms` |
+    | `denominator` | `"n_core_atoms"` (the tip's core-species atoms, from the manifest) or `"clustered_solute"` (the fallback, see below) |
+    | `largest_real_cluster` | the same for the real tip, for contrast: a genuine precipitate stays put as the order rises, a percolating background does not |
+    | `verdict` | `"ok"` / `"near-threshold"` / `"percolating"`, or `"unknown"` where there are no control runs |
+
+    Measured regimes on a percolating dataset separate cleanly - sub-critical at
+    or below 0.01, critical around 0.21, percolating 0.65-0.88 - so the default
+    0.10 / 0.30 cut sits in empty space on both sides. They are keyword
+    arguments; the physics is not universal.
+
+    **Older manifests.** `n_core_atoms` was added after this function; without
+    it the denominator falls back to the solute each control run actually
+    clustered. That fallback *inflates* the fraction at high order, since the
+    denominator shrinks faster than the numerator does, so a non-`"ok"` verdict
+    is additionally gated on the giant cluster exceeding
+    `max(50, 5 x median cluster size)`. Re-running the sweep records the real
+    denominator and removes the guesswork.
+    """
+
+    data = _load_sweep_sizes(sweep_manifest, size_metric, exclude_ions, core_species)
+    rows = _percolation_rows(sweep_manifest, data, warn_fraction, fail_fraction)
+
+    if warn:
+        flagged = [r for r in rows if r["verdict"] in ("percolating", "near-threshold")]
+        if flagged:
+            detail = "; ".join(
+                f"{r['run_name'] or r['swept_value']}: {r['verdict']} "
+                f"({r['giant_fraction']:.2f})"
+                for r in flagged
+            )
+            warnings.warn(
+                f"the randomised control's largest cluster spans a large "
+                f"fraction of the tip's solute at {len(flagged)} of {len(rows)} "
+                f"swept values ({detail}). Cluster *counts* there - including "
+                "the true-positive ratio optimise_n_min thresholds - are not "
+                "meaningful; lower dmax or raise the order.",
+                stacklevel=2,
             )
 
-            if local_real_clusters == 0:
-                vprint(f"TPR cannot be reached for {entry['run_name']}")
-                n_min_found = True
-                break
+    return pd.DataFrame(rows, columns=_PERCOLATION_REPORT_COLUMNS)
 
-            local_tpr = (local_real_clusters - local_random_clusters) / local_real_clusters
 
-            if local_tpr >= confidence_threshold:
-                vprint(
-                    f"{entry['run_name']} | Nmin:{n_min} | TPR: {round(local_tpr, 2)}"
-                    f"\t(real:{local_real_clusters} | random:{round(local_random_clusters)})"
-                )
-                n_min_found = True
-                break
+_PERCOLATION_SHADING = {
+    "percolating": ("tab:red", 0.13, "control percolates"),
+    "near-threshold": ("tab:orange", 0.10, "control near threshold"),
+}
 
-        optimised_n_min_values.append(
-            int(n_min) if n_min_found else int(max(n_min_values))
+
+def _shade_percolating(ax, swept_values, rows):
+    """Grey out the swept values whose control percolates.
+
+    Without this a reader has no way to see that the left third of one of these
+    x-axes is arithmetic on a network that spans the tip.
+    """
+
+    verdicts = {row["swept_value"]: row["verdict"] for row in rows}
+    if not any(v in _PERCOLATION_SHADING for v in verdicts.values()):
+        return
+
+    x = np.asarray(swept_values, dtype=float)
+    if len(x) > 1:
+        midpoints = (x[:-1] + x[1:]) / 2
+        edges = np.concatenate(
+            [[x[0] - (x[1] - x[0]) / 2], midpoints, [x[-1] + (x[-1] - x[-2]) / 2]]
         )
-        optimised_real_clusters.append(local_real_clusters)
-        optimised_random_clusters.append(local_random_clusters)
+    else:
+        edges = np.array([x[0] - 0.5, x[0] + 0.5])
 
-    return optimised_n_min_values, optimised_real_clusters, optimised_random_clusters
+    labelled = set()
+    for i, value in enumerate(swept_values):
+        shading = _PERCOLATION_SHADING.get(verdicts.get(value))
+        if shading is None:
+            continue
+        color, alpha, label = shading
+        ax.axvspan(
+            edges[i], edges[i + 1], color=color, alpha=alpha, zorder=0, lw=0,
+            label=None if label in labelled else label,
+        )
+        labelled.add(label)
 
 
 def plot_real_cluster_ratio_across_swept_param(
@@ -299,14 +643,21 @@ def plot_real_cluster_ratio_across_swept_param(
     size_metric: str = "core",
     exclude_ions: list = None,
     core_species: list = None,
+    flag_percolation: bool = True,
 ):
     """Plot (N_real - N_random)/N_real vs swept parameter, for each n_min.
 
     `size_metric` defaults to "core" - posgen's `Cluster Size(core)` - so the
     curves match the equivalent posgen-era graph. See `optimise_n_min`.
+
+    `flag_percolation` shades the swept values where `percolation_report` says
+    the randomised control's solute network has percolated. The curve is still
+    drawn there, because it is still what the arithmetic gives - but a ratio
+    computed against a control that is one tip-spanning cluster is not a
+    measurement, and it is otherwise indistinguishable from a good one.
     """
 
-    data = _load_sweep_sizes(sweep_manifest, size_metric, exclude_ions)
+    data = _load_sweep_sizes(sweep_manifest, size_metric, exclude_ions, core_species)
     swept_values = sorted(data.keys())
 
     colors = plt.cm.viridis(np.linspace(0, 1, len(n_min_values)))
@@ -335,6 +686,11 @@ def plot_real_cluster_ratio_across_swept_param(
             label="$N_{min}=%s$" % n, alpha=graph_alpha
         )
 
+    if flag_percolation:
+        _shade_percolating(
+            ax, swept_values, _percolation_rows(sweep_manifest, data, 0.10, 0.30)
+        )
+
     ax.set_xlabel(swept_parameter_name)
     ax.set_ylabel("$(N_{det}-N_{rand})/N_{det}$")
     ax.plot(
@@ -358,6 +714,7 @@ def plot_real_clusters_across_swept_param(
     size_metric: str = "core",
     exclude_ions: list = None,
     core_species: list = None,
+    flag_percolation: bool = True,
 ):
     """Plot real cluster count (or number density, if volume given) vs swept parameter.
 
@@ -365,9 +722,12 @@ def plot_real_clusters_across_swept_param(
     quantity its `sizedist.txt` reports - so these curves match the
     equivalent posgen-era graph. Passing "total" counts every atom in the
     cluster instead, which keeps more clusters at every n_min.
+
+    `flag_percolation` shades swept values where the randomised control has
+    percolated - see `plot_real_cluster_ratio_across_swept_param`.
     """
 
-    data = _load_sweep_sizes(sweep_manifest, size_metric, exclude_ions)
+    data = _load_sweep_sizes(sweep_manifest, size_metric, exclude_ions, core_species)
     swept_values = sorted(data.keys())
     show_volume = volume != 0
 
@@ -385,10 +745,63 @@ def plot_real_clusters_across_swept_param(
             label="$N_{min}=%s$" % n, alpha=graph_alpha
         )
 
+    if flag_percolation:
+        _shade_percolating(
+            ax, swept_values, _percolation_rows(sweep_manifest, data, 0.10, 0.30)
+        )
+
     ax.set_xlabel(swept_parameter_name)
     ax.set_ylabel("Number density [$m^{-3}$]" if show_volume else "Number of identified clusters")
     ax.legend(bbox_to_anchor=(1.3, 1))
     ax.set_title(f"Real Clusters and {swept_parameter_name} Values")
+
+    return fig, ax
+
+
+def plot_atom_ratio_across_swept_param(
+    sweep_manifest: list,
+    swept_parameter_name: str,
+    graph_alpha: float = 0.9,
+    figsize: tuple = (9, 5),
+    size_metric: str = "core",
+    exclude_ions: list = None,
+    core_species: list = None,
+    flag_percolation: bool = True,
+):
+    """Plot the atom-based true-positive ratio vs swept parameter.
+
+    `(A_real - <A_rand>) / A_real`, where `A` is the solute the search put into
+    clusters. The companion to `plot_real_cluster_ratio_across_swept_param`,
+    and the one to read first: it counts atoms, so a percolating control cannot
+    hide inside it as a single cluster and cannot be *pushed past the threshold
+    by the percolation itself*. One curve, no n_min - every cluster in the
+    saved tables.
+
+    **At or below zero the control clusters as much solute as the tip does**,
+    and no n_min chosen in that region means anything.
+    """
+
+    data = _load_sweep_sizes(sweep_manifest, size_metric, exclude_ions, core_species)
+    swept_values = sorted(data.keys())
+
+    y_values = [_atom_ratio(data[v]) for v in swept_values]
+
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_axes([0.15, 0.3, 0.5, 0.6])
+
+    ax.plot(swept_values, y_values, 'o-', color="tab:blue", alpha=graph_alpha,
+            label="$(A_{det}-A_{rand})/A_{det}$")
+    ax.axhline(0, color="r", lw=1, label="no discriminating power")
+
+    if flag_percolation:
+        _shade_percolating(
+            ax, swept_values, _percolation_rows(sweep_manifest, data, 0.10, 0.30)
+        )
+
+    ax.set_xlabel(swept_parameter_name)
+    ax.set_ylabel("$(A_{det}-A_{rand})/A_{det}$")
+    ax.legend(bbox_to_anchor=(1.05, 1))
+    ax.set_title("Fraction of Clustered Solute Above the Control")
 
     return fig, ax
 

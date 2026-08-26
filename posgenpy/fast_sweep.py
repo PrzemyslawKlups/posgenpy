@@ -87,7 +87,13 @@ from scipy.spatial import cKDTree
 from .cluster import analyse_clusters
 from .corrections import find_knn_cluster_distance
 from .io import build_ion_formula_map
-from .sweep import _cluster_sizes, optimise_n_min
+from .sweep import (
+    _cluster_sizes,
+    _load_sweep_sizes,
+    _n_min_rows,
+    _percolation_rows,
+    _warn_about_n_min_statuses,
+)
 
 __all__ = [
     "extract_core_atoms",
@@ -577,6 +583,12 @@ def run_fast_grid_sweep(
         already carries `swept_param`/`swept_value` for the other axis, ready
         for `sweep.optimise_n_min` and the `sweep.plot_*` functions. For a 2D
         grid, pick a row or column with `select_sweep` first.
+
+        Orders 1 and 2 are degenerate at `n_min >= 2` and produce identical
+        output: at order 1 every core-species atom is a core point, and at
+        order 2 the only atoms demoted are those with no solute neighbour
+        within dmax, which are singletons that n_min drops anyway. Correct, but
+        surprising in a sweep table - two rows of a curve that cannot differ.
     bulk_ions : list[str], optional
         Recorded in the manifest for the record only - this path never uses it.
     n_min : int
@@ -776,6 +788,9 @@ def run_fast_grid_sweep(
             "random_dir": str(paths[(order, dmax)]["random_dir"]),
             "n_relabel_runs": n_relabel_runs,
             "pipeline": "core_only",
+            # the denominator sweep.percolation_report wants: how much solute
+            # there was for a control's giant cluster to swallow
+            "n_core_atoms": int(len(real_index)),
         }
         if save_real_atoms:
             entry["real_clustered_atoms_path"] = str(
@@ -960,6 +975,9 @@ def summarise_grid(
     core_species: list = None,
     cluster_metrics: bool = True,
     radius_column: str = "equivalent_spherical_radius",
+    warn_fraction: float = 0.10,
+    fail_fraction: float = 0.30,
+    warn: bool = True,
 ) -> pd.DataFrame:
     """One row per (order, dmax) cell: the numbers you pick a parameter pair on.
 
@@ -968,15 +986,27 @@ def summarise_grid(
     together, which is the actual question when both are free. Every column is
     a heatmap over the plane (`viz.plot_grid_heatmap`).
 
-    The threshold rule itself is `sweep.optimise_n_min`, called once per cell,
-    so there is exactly one definition of it in the package:
+    The threshold rule itself is the one `sweep.optimise_n_min` and
+    `sweep.n_min_report` run, applied once per cell, so there is exactly one
+    definition of it in the package:
 
     | column | |
     |---|---|
     | `optimal_n_min` | smallest n_min whose true-positive ratio reaches `confidence_threshold` |
     | `n_real_clusters`, `n_random_clusters` | cluster counts at that n_min |
     | `true_positive_ratio` | the ratio it reached |
-    | `n_min_reached` | False where no n_min in `n_min_values` got there - the cell is then reported at the largest n_min tried, and should not be chosen |
+    | `n_min_reached` | False where the threshold was never crossed - the cell is then reported at the n_min where the search stopped, and should not be chosen |
+    | `n_min_status` | *why* it stopped: `"reached"`, `"unreachable"` (real clusters ran out first) or `"range_exhausted"` (`n_min_values` ran out) |
+
+    Two further columns say whether the comparison behind those numbers still
+    means anything (`sweep.percolation_report`, and `sweep.n_min_report` for the
+    atom-based ratio):
+
+    | column | |
+    |---|---|
+    | `percolation_verdict` | `"ok"` / `"near-threshold"` / `"percolating"`. Where the randomised control's solute network spans the tip it contributes *one* cluster however much solute it ate, `n_random_clusters` collapses towards 1, and `optimal_n_min` is arithmetic on a broken control. **Never pick a cell that is not `"ok"`.** |
+    | `giant_fraction` | the fraction of the tip's solute in that giant cluster, which is what the verdict cuts on |
+    | `true_positive_ratio_atoms` | the same real-vs-control comparison counted in *atoms*, where a percolating control cannot hide as one cluster. At or below zero the cell has no discriminating power |
 
     With `cluster_metrics` (the default) each cell's real clusters are read
     too, giving the shape of what those parameters actually found:
@@ -998,42 +1028,62 @@ def summarise_grid(
 
     n_min_values = list(n_min_values)
     rows = []
+    n_min_rows = []
 
     for entry in manifest:
+        # one cell at a time: two cells of a grid can share a dmax, and
+        # _load_sweep_sizes keys on the swept value
         cell = dict(entry, swept_param="dmax", swept_value=entry["dmax"])
+        sizes = _load_sweep_sizes([cell], size_metric, exclude_ions, core_species)
 
-        n_min, real, random = optimise_n_min(
-            [cell],
-            n_min_values=n_min_values,
-            confidence_threshold=confidence_threshold,
-            size_metric=size_metric,
-            exclude_ions=exclude_ions,
-            core_species=core_species,
-            verbose=False,
-        )
+        search = _n_min_rows([cell], sizes, n_min_values, confidence_threshold)[0]
+        percolation = _percolation_rows(
+            [cell], sizes, warn_fraction, fail_fraction
+        )[0]
+        n_min_rows.append(search)
+
+        optimal_n_min = search["n_min_returned"]
 
         row = {
             "order": entry["order"],
             "dmax": entry["dmax"],
-            "optimal_n_min": n_min[0],
-            "n_real_clusters": real[0],
-            "n_random_clusters": random[0],
-            "true_positive_ratio": (
-                (real[0] - random[0]) / real[0] if real[0] else np.nan
-            ),
-            "n_min_reached": n_min[0] < max(n_min_values),
+            "optimal_n_min": optimal_n_min,
+            "n_real_clusters": search["n_real_clusters"],
+            "n_random_clusters": search["n_random_clusters"],
+            "true_positive_ratio": search["true_positive_ratio"],
+            # a fact from the search, not a guess from the number it returned:
+            # a cell that ran out of real clusters also returns an n_min below
+            # max(n_min_values), and used to be reported as a pass
+            "n_min_reached": search["status"] == "reached",
+            "n_min_status": search["status"],
+            "true_positive_ratio_atoms": search["true_positive_ratio_atoms"],
+            "percolation_verdict": percolation["verdict"],
+            "giant_fraction": percolation["giant_fraction"],
         }
 
         if cluster_metrics:
             row.update(
                 _cell_cluster_metrics(
-                    entry, n_min[0], size_metric, exclude_ions, core_species,
+                    entry, optimal_n_min, size_metric, exclude_ions, core_species,
                     radius_column,
                 )
             )
 
         row["run_name"] = entry["run_name"]
         rows.append(row)
+
+    if warn:
+        _warn_about_n_min_statuses(n_min_rows, confidence_threshold)
+        flagged = [r for r in rows if r["percolation_verdict"] != "ok"]
+        if flagged:
+            warnings.warn(
+                f"{len(flagged)} of {len(rows)} cells have a randomised control "
+                "whose largest cluster spans much of the tip's solute "
+                "(percolation_verdict is not 'ok'). Their cluster counts, and "
+                "so their optimal_n_min, are not meaningful; see "
+                "sweep.percolation_report.",
+                stacklevel=2,
+            )
 
     return pd.DataFrame(rows).sort_values(["order", "dmax"], ignore_index=True)
 
