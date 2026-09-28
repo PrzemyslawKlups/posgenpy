@@ -275,6 +275,22 @@ def test_n_min_spec_accepts_a_number_a_mapping_or_a_summary(grid, summary):
         _n_min_lookup(summary, column="nope")
 
 
+def test_n_min_spec_accepts_optimise_n_min_output_for_a_1d_sweep(grid):
+    """`optimise_n_min` returns a plain list, one per manifest entry - the
+    1D notebook passes it straight in rather than building a mapping."""
+    order_axis = pgp.select_sweep(grid, dmax=0.4)
+    n_mins = [2, 30, 5]
+
+    table = pgp.load_grid_cluster_table(order_axis, n_min=n_mins)
+    for entry, n_min in zip(order_axis, n_mins):
+        cell = table.loc[table["order"] == entry["order"]]
+        assert (cell["n_min"] == n_min).all()
+        assert (cell["size_core"] >= n_min).all()
+
+    with pytest.raises(ValueError, match="one per manifest entry"):
+        pgp.load_grid_cluster_table(order_axis, n_min=n_mins[:2])
+
+
 # ---------------------------------------------------------------------------
 # Following clusters between cells
 # ---------------------------------------------------------------------------
@@ -530,11 +546,152 @@ def test_cluster_evolution_view_has_one_legend_entry_per_swept_value(grid, summa
     assert figure.data[0].marker.size > figure.data[1].marker.size
 
     spread = pgp.compare_selected_clusters_across_param(
-        dmax_axis, "dmax", chosen_value=0.4, selected_clusters=[biggest], spread=True
+        dmax_axis, "dmax", chosen_value=0.4, selected_clusters=[biggest],
+        spread=True, ion_colors={"Cu": "#b87333"},
     )
-    assert spread.data[1].x.min() > spread.data[0].x.max()
+    # one 3D subplot per value, titled by it, all framing the same box
+    assert [a.text for a in spread.layout.annotations] == ["dmax = 0.4", "dmax = 0.6"]
+    assert {t.scene for t in spread.data} == {"scene", "scene2"}
+    assert spread.layout.scene.xaxis.range == spread.layout.scene2.xaxis.range
+    # coloured by ion, with one legend entry per ion across both subplots
+    assert {t.marker.color for t in spread.data if t.name == "Cu"} == {"#b87333"}
+    assert sorted(t.name for t in spread.data if t.showlegend) == sorted(
+        {t.name for t in spread.data}
+    )
+
+    # the page that links the cameras: one script, not closed early by a
+    # tooltip's "</extra>", naming both scenes
+    html = pgp.viz._linked_scenes_html(spread)
+    assert html.count("</script>") == 1
+    assert '"scene2"' in html and "plotly_relayouting" in html
 
     with pytest.raises(ValueError, match="should match exactly one"):
         pgp.compare_selected_clusters_across_param(
             dmax_axis, "dmax", chosen_value=0.55, selected_clusters=[biggest]
         )
+
+
+def test_cluster_evolution_view_draws_each_value_at_its_own_n_min(grid, summary):
+    dmax_axis = pgp.select_sweep(grid, order=5)
+    table = pgp.load_grid_cluster_table(grid, n_min=None)
+    at_04 = table.loc[(table["order"] == 5) & np.isclose(table["dmax"], 0.4)]
+    biggest = at_04.sort_values("size_core", ascending=False)["cluster_id"].iloc[0]
+    everything = int(table["size_core"].max()) + 1
+
+    # nothing survives at 0.6, so its subplot has only unclustered atoms
+    spread = pgp.compare_selected_clusters_across_param(
+        dmax_axis, "dmax", chosen_value=0.4, selected_clusters=[biggest],
+        n_min=[1, everything], include_unclustered=True, spread=True,
+    )
+    assert [a.text for a in spread.layout.annotations] == [
+        "dmax = 0.4, n_min 1", f"dmax = 0.6, n_min {everything}",
+    ]
+    assert {t.name for t in spread.data if t.scene == "scene2"} == {"unclustered"}
+    assert {t.name for t in spread.data if t.scene == "scene"} - {"unclustered"}
+
+    # a cluster clipped at its own value is drawn as unclustered - and said so
+    with pytest.warns(UserWarning, match="below n_min"):
+        pgp.compare_selected_clusters_across_param(
+            dmax_axis, "dmax", chosen_value=0.4, selected_clusters=[biggest],
+            n_min=everything, spread=True,
+        )
+
+
+def test_size_distribution_marks_each_values_n_min(grid):
+    order_axis = pgp.select_sweep(grid, dmax=0.4)
+    sizes = pgp.load_sweep_size_table(order_axis)
+
+    figure = pgp.plot_size_distribution(
+        sizes, x="order", y="size_core", n_min=[2, 4, 6]
+    )
+    tick = next(t for t in figure.data if t.name == "n_min")
+    assert list(tick.x) == [3, 5, 8] and list(tick.y) == [2, 4, 6]
+
+    with pytest.raises(ValueError, match="3 values of order"):
+        pgp.plot_size_distribution(sizes, x="order", y="size_core", n_min=[2, 4])
+
+
+def test_reference_line_spans_the_plot_whatever_the_x_values(grid, summary):
+    """Placed in paper coordinates: an axis-domain ("x domain") line is read as
+    data x = 0..1 by older renderers, which misses an Order axis entirely."""
+    table = pgp.load_grid_cluster_table(grid, n_min=summary)
+
+    figure = pgp.plot_size_distribution(
+        table, x="order", y="closest_cluster_distance_norm", color=None,
+        reference_line=(1, "equivalent spheres touch"),
+    )
+    (line,) = figure.layout.shapes
+    assert (line.xref, line.x0, line.x1) == ("paper", 0, 1)
+    assert (line.yref, line.y0, line.y1) == ("y", 1, 1)
+    (label,) = figure.layout.annotations
+    assert (label.xref, label.x, label.y) == ("paper", 1, 1)
+    assert label.text == "equivalent spheres touch"
+
+    unlabelled = pgp.plot_size_distribution(
+        table, x="order", y="closest_cluster_distance_norm", reference_line=1
+    )
+    assert len(unlabelled.layout.shapes) == 1 and not unlabelled.layout.annotations
+
+
+def make_composition_tables():
+    stats = pd.DataFrame(
+        {
+            "cluster_id": [7, 3, 5, 9],
+            "Mn": [10, 0, 4, 0], "Ni": [10, 2, 4, 0], "Si": [20, 2, 0, 0],
+            "Cu": [0, 6, 2, 5], "Fe": [50, 10, 10, 10],
+            "is_edge_cluster": [False, True, False, False],
+        }
+    )
+    stats["cluster_size"] = stats[["Mn", "Ni", "Si", "Cu"]].sum(axis=1)
+    matrix = pd.DataFrame(
+        {"size": [10000], "Mn": [140], "Ni": [70], "Si": [50], "Cu": [5],
+         "Fe": [9700], "P": [0]}
+    )
+    return stats, matrix
+
+
+def test_ternary_places_each_cluster_by_its_three_elements_alone():
+    stats, matrix = make_composition_tables()
+
+    figure = pgp.plot_cluster_ternary(
+        stats, ions=["Mn", "Ni", "Si"], unclustered_stats=matrix
+    )
+    traces = {t.name: t for t in figure.data}
+
+    # cluster 7: 10 Mn, 10 Ni, 20 Si; cluster 5 has no Si; Cu and Fe ignored
+    interior = traces["interior clusters"]
+    assert np.allclose(interior.a, [25, 50]) and np.allclose(interior.c, [50, 0])
+    assert traces["edge clusters"].marker.color == pgp.EDGE_CLUSTER_COLORS[True]
+    # pooled: every cluster's atoms summed first (14 Mn, 16 Ni, 22 Si)
+    assert np.allclose(
+        [traces["all clusters"].a[0], traces["all clusters"].c[0]],
+        [14 / 52 * 100, 22 / 52 * 100],
+    )
+    assert np.isclose(traces["matrix"].a[0], 140 / 260 * 100)
+    # cluster 9 has none of the three and cannot be placed
+    assert "1 clusters with none of the three left out" in figure.layout.title.text
+
+    with pytest.warns(UserWarning, match=r"no \['Si'\] column"):
+        pgp.plot_cluster_ternary(stats.drop(columns="Si"))
+
+
+def test_composition_bars_are_each_100_percent_and_ordered_by_size():
+    stats, matrix = make_composition_tables()
+
+    figure = pgp.plot_cluster_composition_bars(
+        stats, ions=["Cu", "Ni", "Si", "Mn", "P"], unclustered_stats=matrix
+    )
+    clusters = [t for t in figure.data if t.xaxis == "x"]
+    references = [t for t in figure.data if t.xaxis == "x2"]
+
+    # P has no atoms anywhere, so no legend entry for it
+    assert [t.name for t in clusters] == ["Cu", "Ni", "Si", "Mn"]
+    # smallest first, ties by id, each column labelled with its size
+    assert list(clusters[0].x) == ["Cluster 9", "Cluster 3", "Cluster 5", "Cluster 7"]
+    assert list(figure.layout.xaxis.ticktext) == ["5", "10", "10", "40"]
+    assert np.allclose(np.sum([t.y for t in clusters], axis=0), 100)
+
+    assert list(references[0].x) == ["all clusters", "matrix"]
+    assert np.allclose(np.sum([t.y for t in references], axis=0), 100)
+    mn = next(t for t in references if t.name == "Mn")
+    assert np.allclose(mn.y, [14 / 65 * 100, 140 / 265 * 100])

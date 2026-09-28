@@ -71,10 +71,11 @@ whichever its BFS reaches first. That is the same class of ambiguity that
 already puts this engine 1 atom out of 45,194 apart from posgen itself
 (see ../README). `validate_fast_grid` measures it on real data.
 """
+import hashlib
 import json
 import multiprocessing as mp
 import warnings
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from time import perf_counter
 
@@ -84,6 +85,7 @@ from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import connected_components
 from scipy.spatial import cKDTree
 
+from ._progress import SweepProgress
 from .cluster import analyse_clusters
 from .corrections import find_knn_cluster_distance
 from .io import build_ion_formula_map
@@ -563,6 +565,7 @@ def run_fast_grid_sweep(
     n_jobs: int = 1,
     resume: bool = True,
     verbose: bool = True,
+    progress: bool = False,
 ) -> list:
     """Sweep the whole (order x dmax) grid, one pass per dataset.
 
@@ -608,7 +611,24 @@ def run_fast_grid_sweep(
         back to serial where fork is unavailable.
     resume : bool
         Skip cells whose parquet files already exist, so an interrupted sweep
-        picks up where it stopped.
+        picks up where it stopped. Only files this same sweep wrote are
+        reused: every sweep records its inputs (which atoms are which core
+        species, `n_min`, the relabelling seed) in
+        `{prefix}_fast_grid_inputs.json` before writing anything, and resuming
+        a folder recorded with different ones raises rather than mixing two
+        sweeps' cells. `resume=False` recomputes everything.
+    progress : bool
+        One progress bar over every cluster search the sweep runs - each cell
+        for the real tip and for every control dataset, cells x
+        (`n_relabel_runs` + 1) in all - with the latest `verbose` message on
+        the line under it, overwritten, instead of a growing log. The real tip
+        advances it a cell at a time; a control dataset clusters every cell in
+        one pass, so it advances a whole row of cells when it finishes. Work
+        `resume` skips counts as done from the start. The two cost very
+        different amounts per step, so there is no overall time estimate;
+        each phase shows its own, from the pace of its own finished steps.
+        Plain text in a notebook (no widgets), so nothing is downloaded to
+        draw it.
 
     Returns
     -------
@@ -646,7 +666,14 @@ def run_fast_grid_sweep(
     n_atoms = len(pos_df)
     max_dmax = max(dmax_values)
 
-    vprint = print if verbose else lambda *a, **kw: None
+    n_datasets = n_relabel_runs + 1
+    tracker = SweepProgress(
+        total=len(cells) * n_datasets,
+        desc=f"{len(cells)} cells x {n_datasets} datasets",
+        enabled=progress,
+        verbose=verbose,
+    )
+    vprint = tracker.log
 
     # ---------------------------------
     # The real tip
@@ -663,11 +690,32 @@ def run_fast_grid_sweep(
             f"no atoms ranged as any of {core_ions}; every cell will be empty"
         )
 
+    # what every file below depends on, recorded before the first is written,
+    # so a folder can always say which sweep its files came from
+    inputs = {
+        "core_ions": core_ions,
+        "n_atoms": int(n_atoms),
+        "n_core_atoms": int(len(real_index)),
+        "core_code_sha1": hashlib.sha1(
+            np.ascontiguousarray(full_code).tobytes()
+        ).hexdigest(),
+        "n_min": int(n_min),
+        "relabel_seed": int(relabel_seed),
+        "cached_shuffles": cached_shuffles is not None,
+    }
+    inputs_path = output_dir / f"{prefix}_fast_grid_inputs.json"
+    if resume:
+        _check_resumable(inputs_path, inputs, paths)
+    with open(inputs_path, "w") as f:
+        json.dump(inputs, f, indent=2)
+
     missing_real = [
         cell
         for cell in cells
         if not (resume and paths[cell]["real_cluster_stats_path"].exists())
     ]
+
+    tracker.update(len(cells) - len(missing_real))
 
     if missing_real:
         neighbourhood = CoreNeighbourhood(
@@ -681,6 +729,9 @@ def run_fast_grid_sweep(
 
         formula_map = build_ion_formula_map(rrng_df)
 
+        # timed from here, not from the start: the neighbourhood above is paid
+        # once, and would otherwise inflate every cell's share of the estimate
+        tracker.start_phase("real tip", len(missing_real))
         for order, dmax in missing_real:
             labels = _apply_n_min(neighbourhood.labels(order, dmax), n_min)
             atoms = _atoms_frame(pos_df, real_index, labels, real_code, core_ions)
@@ -702,6 +753,7 @@ def run_fast_grid_sweep(
                 f"  order={order} dmax={dmax}: {len(stats)} clusters, "
                 f"{int((labels != -1).sum())} core+border atoms"
             )
+            tracker.step(1)
 
         del neighbourhood
 
@@ -719,9 +771,12 @@ def run_fast_grid_sweep(
             continue
         todo.append(run_index)
 
+    tracker.update((n_relabel_runs - len(todo)) * len(cells))
+
     if todo:
         started = perf_counter()
         n_workers = _resolve_n_jobs(n_jobs, len(todo))
+        tracker.start_phase("control runs", len(todo))
 
         _SHARED.clear()
         _SHARED.update(
@@ -746,12 +801,18 @@ def run_fast_grid_sweep(
                 # fork, so each worker inherits `positions` copy-on-write
                 # instead of being sent its own copy
                 with ProcessPoolExecutor(max_workers=n_workers) as pool:
-                    for run_index, elapsed in pool.map(_random_dataset_job, todo):
+                    # as they finish, not in submission order, so the bar
+                    # moves as soon as any worker is done
+                    jobs = [pool.submit(_random_dataset_job, i) for i in todo]
+                    for job in as_completed(jobs):
+                        run_index, elapsed = job.result()
                         vprint(f"  control run {run_index}: {elapsed:.1f}s")
+                        tracker.step(len(cells))
             else:
                 for run_index in todo:
                     _, elapsed = _random_dataset_job(run_index)
                     vprint(f"  control run {run_index}: {elapsed:.1f}s")
+                    tracker.step(len(cells))
         finally:
             # never leave the tip's positions alive in module state
             _SHARED.clear()
@@ -760,6 +821,8 @@ def run_fast_grid_sweep(
             f"{len(todo)} control datasets x {len(cells)} cells in "
             f"{perf_counter() - started:.1f}s"
         )
+
+    tracker.close()
 
     # ---------------------------------
     # Manifest
@@ -812,6 +875,64 @@ def run_fast_grid_sweep(
         json.dump(manifest, f, indent=2)
 
     return manifest
+
+
+def _check_resumable(inputs_path, inputs, paths):
+    """Refuse to resume from files a different sweep wrote.
+
+    Resuming reuses every cell file already on disk, whatever made it. A folder
+    holding an earlier sweep with other core ions, another tip or another
+    n_min would be mixed into this one without a word - and the control runs,
+    being per-cluster sizes, carry nothing that would show it afterwards: the
+    n_min read off them would simply be wrong.
+    """
+
+    if inputs_path.exists():
+        with open(inputs_path) as f:
+            recorded = json.load(f)
+
+        changed = [key for key in inputs if recorded.get(key) != inputs[key]]
+        if changed:
+            shown = [key for key in changed if key != "core_code_sha1"] or [
+                "core_code_sha1"
+            ]
+            details = "; ".join(
+                f"{key}: {recorded.get(key)} there, {inputs[key]} now"
+                for key in shown
+            )
+            raise ValueError(
+                f"{inputs_path.parent} already holds cells from a sweep with "
+                f"different inputs ({details}). Resuming would mix the two "
+                "sweeps' cells. Use a new output_dir or prefix to keep both, or "
+                "resume=False to recompute every cell here."
+            )
+        return
+
+    # a folder from before sweeps recorded their inputs: the real tip's
+    # per-atom files are the one thing left that can be checked
+    from pyarrow.parquet import read_metadata
+
+    stale = {}
+    for cell, cell_paths in paths.items():
+        path = cell_paths["real_clustered_atoms_path"]
+        if path.exists():
+            n_rows = read_metadata(path).num_rows
+            if n_rows != inputs["n_core_atoms"]:
+                stale[cell] = n_rows
+
+    if stale:
+        listed = ", ".join(
+            f"order={order} dmax={dmax} ({n:,} atoms)"
+            for (order, dmax), n in sorted(stale.items())
+        )
+        raise ValueError(
+            f"{len(stale)} cells in {inputs_path.parent} were clustered on a "
+            f"different set of atoms than this sweep's "
+            f"{inputs['n_core_atoms']:,} core-species atoms: {listed}. They "
+            "come from another sweep (other core ions, or another tip). Use a "
+            "new output_dir or prefix, or resume=False to recompute every cell "
+            "here."
+        )
 
 
 def run_fast_parameter_sweep(
@@ -1124,16 +1245,26 @@ def _cell_cluster_metrics(
     return metrics
 
 
-def _n_min_lookup(n_min, column="optimal_n_min"):
+def _n_min_lookup(n_min, column="optimal_n_min", manifest=None):
     """Turn any of the accepted n_min specs into a `(order, dmax) -> int` call.
 
     Accepts a single number, a `{(order, dmax): n_min}` mapping, a
-    `summarise_grid` frame (whose `optimal_n_min` is then used per cell), or
-    None for "keep every cluster".
+    `summarise_grid` frame (whose `optimal_n_min` is then used per cell), a
+    list with one n_min per entry of `manifest` - what `sweep.optimise_n_min`
+    returns for a 1D sweep - or None for "keep every cluster".
     """
 
     if n_min is None:
         return lambda order, dmax: 1
+
+    if isinstance(n_min, (list, tuple, np.ndarray, pd.Series)):
+        if manifest is None or len(n_min) != len(manifest):
+            raise ValueError(
+                f"a list of n_min values needs one per manifest entry; got "
+                f"{len(n_min)} for "
+                f"{'no manifest' if manifest is None else f'{len(manifest)} entries'}"
+            )
+        n_min = {(e["order"], e["dmax"]): n for e, n in zip(manifest, n_min)}
 
     if isinstance(n_min, pd.DataFrame):
         if column not in n_min.columns:
@@ -1174,11 +1305,12 @@ def load_grid_cluster_table(
 
     Parameters
     ----------
-    n_min : int, dict, DataFrame or None
-        A single n_min for every cell, a `{(order, dmax): n_min}` mapping, or
-        a `summarise_grid` frame - in which case each cell is clipped at its
-        own `n_min_column` (`optimal_n_min` by default). None keeps every
-        cluster.
+    n_min : int, dict, DataFrame, list or None
+        A single n_min for every cell, a `{(order, dmax): n_min}` mapping, a
+        `summarise_grid` frame - in which case each cell is clipped at its
+        own `n_min_column` (`optimal_n_min` by default) - or a list with one
+        n_min per manifest entry, as `optimise_n_min` returns for a 1D sweep.
+        None keeps every cluster.
     neighbour_distances : bool
         Attach `closest_cluster_distance` / `closest_cluster_id` and, where
         `radius_column` exists, the radius-normalised
@@ -1193,7 +1325,7 @@ def load_grid_cluster_table(
         `viz.plot_distribution_grid`, or a `groupby(["order", "dmax"])`.
     """
 
-    lookup = _n_min_lookup(n_min, n_min_column)
+    lookup = _n_min_lookup(n_min, n_min_column, manifest)
     frames = []
 
     for entry in manifest:
@@ -1255,11 +1387,12 @@ def track_cluster_splits(
 
     Parameters
     ----------
-    n_min : int, dict, DataFrame or None
+    n_min : int, dict, DataFrame, list or None
         Clusters below this are ignored on both sides of every comparison -
         the same spec `load_grid_cluster_table` takes, so passing a
-        `summarise_grid` frame compares each cell at its own optimal n_min.
-        Leave as None and every 2-atom noise cluster counts as a split.
+        `summarise_grid` frame (or, for a 1D sweep, the list `optimise_n_min`
+        returns) compares each cell at its own optimal n_min. Leave as None
+        and every 2-atom noise cluster counts as a split.
     min_shared_atoms : int
         How many atoms a cluster must contribute to another before it counts
         as having become it. 1 counts every shared atom; raising it ignores
@@ -1276,7 +1409,7 @@ def track_cluster_splits(
         raise ValueError('axis must be "order" or "dmax"')
 
     fixed = "dmax" if axis == "order" else "order"
-    lookup = _n_min_lookup(n_min, n_min_column)
+    lookup = _n_min_lookup(n_min, n_min_column, manifest)
 
     missing = [e["run_name"] for e in manifest if "real_clustered_atoms_path" not in e]
     if missing:

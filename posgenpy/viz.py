@@ -12,6 +12,7 @@ read off and looked straight back up: hovering a cluster in
 notebooks had (`hover_data=df.columns`) and is what makes an outlier in a size
 distribution findable in 3D.
 """
+import uuid
 import warnings
 from pathlib import Path
 
@@ -22,6 +23,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from .corrections import cluster_alpha_shapes
+from .fast_sweep import _clip_small_clusters, _n_min_lookup
 
 # The old notebooks' real-vs-random pair, kept so these graphs read the same:
 # a dark blue and a mid orange, which stay distinguishable under every common
@@ -193,6 +195,8 @@ def plot_size_distribution(
     figsize: tuple = (900, 520),
     point_size: int = 4,
     max_points: int = 20000,
+    n_min=None,
+    reference_line=None,
 ):
     """Violin + every individual cluster as a hoverable point.
 
@@ -229,10 +233,34 @@ def plot_size_distribution(
         kept in full and the randomised ones thinned per x group (see
         `_limit_points`); `None` plots every one.
 
+    n_min : dict or list, optional
+        Mark each x value's n_min as a black tick across its violin: a
+        `{x value: n_min}` mapping, or a list in ascending-x order - which is
+        what `optimise_n_min` returns for a sweep manifest. The clusters below
+        a tick are the ones that n_min throws away. Only meaningful when `y` is
+        the size n_min is applied to (`size_core`).
+
+    reference_line : float or (float, str), optional
+        A dotted horizontal line at this y, across every violin, with an
+        optional label at its right-hand end - e.g. `(1, "equivalent spheres
+        touch")` on `closest_cluster_distance_norm`.
+
     Returns
     -------
     plotly.graph_objects.Figure
     """
+
+    if n_min is not None and x is None:
+        raise ValueError("n_min is marked per x value, so it needs an x")
+
+    if n_min is not None and not isinstance(n_min, dict):
+        x_values = sorted(stats[x].unique())
+        if len(n_min) != len(x_values):
+            raise ValueError(
+                f"{len(n_min)} n_min values for {len(x_values)} values of "
+                f"{x} ({x_values}); pass a {{{x} value: n_min}} mapping instead"
+            )
+        n_min = dict(zip(x_values, n_min))
 
     stats = _with_cluster_label(_limit_points(stats, x, max_points))
 
@@ -252,6 +280,37 @@ def plot_size_distribution(
     )
 
     fig.update_traces(marker_size=point_size, marker_opacity=0.7, meanline_visible=True)
+
+    if n_min:
+        fig.add_trace(
+            go.Scatter(
+                x=list(n_min), y=[int(n) for n in n_min.values()],
+                mode="markers", name="n_min",
+                marker=dict(symbol="line-ew", size=40, line=dict(width=3, color="black")),
+                hovertemplate=f"{x} %{{x}}<br>n_min %{{y}}<extra></extra>",
+            )
+        )
+
+    if reference_line is not None:
+        value, label = (
+            reference_line if isinstance(reference_line, tuple)
+            else (reference_line, None)
+        )
+        # Placed across the plot in paper coordinates rather than with
+        # fig.add_hline, whose "x domain" reference an older plotly.js (1.49,
+        # for one) does not know and falls back to data x = 0..1 for: on an
+        # Order axis (3-8) that is a stub left of every violin, while on a
+        # dmax axis (0.2-0.7) it happens to look right.
+        fig.add_shape(
+            type="line", xref="paper", x0=0, x1=1, yref="y", y0=value, y1=value,
+            line=dict(color="black", dash="dot", width=1.5),
+        )
+        if label:
+            fig.add_annotation(
+                xref="paper", x=1, xanchor="right", yref="y", y=value,
+                yanchor="bottom", text=label, showarrow=False,
+            )
+
     fig.update_layout(
         title=title or f"{y} distribution" + (f" vs {x}" if x else ""),
         xaxis_title=x,
@@ -837,41 +896,175 @@ def show_clusters_in_pos(
     return selected
 
 
+# how a swept parameter is written in a subplot title
+_PARAM_LABELS = {"order": "Order"}
+
+# plotly.js, from the page: every 3D subplot follows the camera of the one being
+# turned. plotly can match 2D axes between subplots but has no equivalent for 3D
+# cameras, so this is the only way to get it.
+_LINKED_SCENES_JS = """
+(function () {
+  var figure = __FIGURE__;
+  var gd = document.getElementById("__DIV_ID__");
+
+  function cameraKey(update) {
+    return Object.keys(update).filter(function (key) {
+      return /^scene\\d*\\.camera$/.test(key);
+    })[0];
+  }
+
+  function copy(camera) {
+    return JSON.parse(JSON.stringify(camera));
+  }
+
+  function linkCameras() {
+    var scenes = Object.keys(figure.layout).filter(function (key) {
+      return /^scene\\d*$/.test(key);
+    });
+    var following = false;
+
+    // Live, while one scene is dragged. A relayout here would redraw every
+    // scene from the saved layout - the dragged one too, whose camera is only
+    // saved on release - so the others are moved by the same per-scene
+    // viewport call plotly's own camera redraw makes.
+    gd.on("plotly_relayouting", function (update) {
+      var key = cameraKey(update);
+      if (!key) return;
+      scenes.forEach(function (id) {
+        var scene = gd._fullLayout[id];
+        if (key === id + ".camera" || !scene || !scene._scene) return;
+        scene._scene.setViewport({
+          camera: copy(update[key]), aspectratio: scene.aspectratio
+        });
+      });
+    });
+
+    // ...and on release or scroll-zoom, written into the layout, so a redraw
+    // leaves them where they were turned to
+    gd.on("plotly_relayout", function (update) {
+      var key = cameraKey(update);
+      if (following || !key) return;
+      var follow = {};
+      scenes.forEach(function (id) {
+        if (key !== id + ".camera") follow[id + ".camera"] = copy(update[key]);
+      });
+      following = true;
+      var done = function () { following = false; };
+      Plotly.relayout(gd, follow).then(done, done);
+    });
+  }
+
+  function draw() {
+    Plotly.newPlot(gd, figure.data, figure.layout, figure.config || {})
+      .then(linkCameras);
+  }
+
+  if (window.Plotly && window.Plotly.version === "__PLOTLY_VERSION__") {
+    draw();
+  } else {
+    var script = document.createElement("script");
+    script.src = "https://cdn.plot.ly/plotly-__PLOTLY_VERSION__.min.js";
+    script.onload = draw;
+    script.onerror = function () {
+      gd.textContent = "plotly.js could not be loaded from " + script.src +
+        " (offline?). fig.show(renderer=...) draws this figure without " +
+        "linked cameras.";
+    };
+    document.head.appendChild(script);
+  }
+})();
+"""
+
+
+def _linked_scenes_html(fig):
+    """`fig` as an HTML snippet whose 3D subplots turn together."""
+
+    from plotly.offline import get_plotlyjs_version
+
+    div_id = f"posgenpy-{uuid.uuid4().hex}"
+    # "</" would let a tooltip's "</extra>" - or anything else - close the
+    # script tag early; "<\/" is the same string to JSON
+    figure_json = fig.to_json().replace("</", "<\\/")
+
+    script = (
+        _LINKED_SCENES_JS
+        .replace("__DIV_ID__", div_id)
+        .replace("__PLOTLY_VERSION__", get_plotlyjs_version())
+        .replace("__FIGURE__", figure_json)
+    )
+    return f'<div id="{div_id}"></div>\n<script type="text/javascript">{script}</script>'
+
+
+class LinkedScenesFigure(go.Figure):
+    """A figure of 3D subplots whose cameras turn together.
+
+    Shown in a notebook, it is drawn as HTML carrying the few lines of
+    JavaScript that do the linking (plotly.js is loaded from its CDN the first
+    time, so this needs to be online). Anywhere else, or with an explicit
+    renderer - `fig.show(renderer="vscode")` - it is a normal, unlinked
+    `go.Figure`, as it is for `write_html`, `to_dict` and every `update_*`.
+    """
+
+    def show(self, *args, **kwargs):
+        if args or kwargs or not _in_notebook():
+            return super().show(*args, **kwargs)
+
+        from IPython.display import HTML, display
+        display(HTML(_linked_scenes_html(self)))
+
+    def _ipython_display_(self):
+        self.show()
+
+
+def _in_notebook():
+    """True inside a Jupyter kernel (VSCode, JupyterLab), which runs HTML output."""
+    try:
+        from IPython import get_ipython
+    except ImportError:
+        return False
+    return getattr(get_ipython(), "kernel", None) is not None
+
+
 def compare_selected_clusters_across_param(
     sweep_manifest: list,
     swept_param_name: str,
     chosen_value,
     selected_clusters: list,
+    n_min=None,
     hover: list = None,
     padding: float = 0.5,
     include_unclustered: bool = False,
     spread: bool = False,
+    ion_colors: dict = None,
+    n_cols: int = 3,
     colorscale: str = "Viridis",
     marker_size: int = 3,
     size_step: float = 1.6,
     title: str = None,
-    figsize: tuple = (900, 750),
+    figsize: tuple = None,
 ):
-    """One cluster, at every value of a swept parameter, in one 3D view.
+    """One cluster, at every value of a swept parameter.
 
     Takes the neighbourhood of `selected_clusters` (as they are at
     `chosen_value`) and draws what every other swept value made of the same
-    piece of the tip, **each value in its own colour**. A cluster splitting in
-    two as the Order rises shows up as the later colours arriving where the
-    earlier ones had a single blob; a merge is the same thing backwards.
+    piece of the tip. Two ways to lay that out:
 
-    Every value draws the *same atoms* at the *same coordinates*, so drawn flat
-    they would hide each other and only the last colour would be visible. The
-    markers are therefore graded by size - low parameter values large, high
-    values small and drawn on top - which leaves all of them readable: a big
-    dot with a small dot inside it is an atom clustered at both values, a bare
-    small dot is one that only the higher value picked up, and a bare big dot
-    is one the higher value dropped.
-
-    There is one legend entry per swept value, so clicking one hides that
-    value - comparing two at a time is how this plot is read. `spread=True`
-    lays the values out side by side along x instead of on top of each other,
-    which is the clearer way to watch a cluster break in two.
+    - **`spread=True`**: one 3D subplot per value, `n_cols` to a row, titled
+      by the value ("Order = 5") and coloured by ion (`ion_colors`). Every
+      subplot frames the same box, and turning or zooming one turns all the
+      others with it (see `LinkedScenesFigure`), so a cluster breaking in two
+      as the Order rises is one blob in one subplot and two in the next,
+      seen from the same side. Clicking an ion in the legend hides it
+      everywhere.
+    - **`spread=False`** (default): every value in one view, **each value in
+      its own colour**. Every value draws the *same atoms* at the *same
+      coordinates*, so drawn flat they would hide each other; the markers are
+      graded by size instead - low parameter values large, high values small
+      and drawn on top - so a big dot with a small dot inside it is an atom
+      clustered at both values, a bare small dot is one that only the higher
+      value picked up, and a bare big dot is one the higher value dropped.
+      One legend entry per value, so clicking one hides it and two can be
+      compared directly.
 
     Cluster ids are per-run, so the same physical cluster generally has a
     different id at each swept value; each atom's tooltip carries its id at
@@ -879,13 +1072,29 @@ def compare_selected_clusters_across_param(
 
     Parameters
     ----------
+    n_min : int, list, dict or None
+        Draw each swept value's clusters as they are after *its own* n_min:
+        the list `optimise_n_min` returns for this manifest, a single number,
+        or anything else `fast_sweep.load_grid_cluster_table` takes. Clusters
+        below it count as unclustered, so the 2-3 atom noise clusters a sweep
+        keeps are not drawn beside real ones as if they were part of them.
+        Sizes are counted in the per-atom file - core+border atoms on the fast
+        path, the size n_min is chosen on. None draws every cluster.
     padding : float
         Extra nm around the chosen clusters' bounding box, so a cluster that
         grows at a looser parameter is not cut off at the box edge.
     include_unclustered : bool
-        Also draw core-species atoms the search left unclustered in that box.
+        Also draw core-species atoms the search left unclustered in that box
+        (grey, under their own legend entry, when `spread=True`).
     spread : bool
-        Offset each swept value along x into its own copy, side by side.
+        One linked 3D subplot per swept value instead of one overlaid view.
+    ion_colors : dict, optional
+        Ion -> colour, as `get_ion_colours_from_rrng` returns, for
+        `spread=True`. Ions it does not name get plotly's default colours.
+    n_cols : int
+        Subplots per row when `spread=True`.
+    colorscale : str
+        The per-value colour ramp when `spread=False`.
     """
 
     chosen_entries = [
@@ -911,12 +1120,27 @@ def compare_selected_clusters_across_param(
     high = chosen_df[["x", "y", "z"]].max() + padding
 
     swept_values = sorted(e["swept_value"] for e in sweep_manifest)
-    colours = _colour_steps(swept_values, colorscale)
-    step = (high["x"] - low["x"]) + 2 * padding
+    lookup = _n_min_lookup(n_min, manifest=sweep_manifest)
+    n_mins = {e["swept_value"]: lookup(e["order"], e["dmax"]) for e in sweep_manifest}
 
-    frames = []
+    chosen_n_min = n_mins[chosen_entries[0]["swept_value"]]
+    sizes = chosen_df["cluster_id"].value_counts()
+    below = sorted(sizes.index[sizes < chosen_n_min].tolist())
+    if below:
+        warnings.warn(
+            f"clusters {below} are below n_min={chosen_n_min} at "
+            f"{swept_param_name}={chosen_value}, so they are drawn as "
+            "unclustered there"
+        )
+
+    frames = {}
     for entry in sweep_manifest:
         df = pd.read_parquet(entry["real_clustered_atoms_path"])
+        # clipped over the whole cell, before the box: a cluster poking into
+        # the box is judged on all of its atoms, not the ones inside
+        df["cluster_id"] = _clip_small_clusters(
+            df["cluster_id"].to_numpy(), n_mins[entry["swept_value"]]
+        )
         inside = (
             (df["x"].between(low["x"], high["x"]))
             & (df["y"].between(low["y"], high["y"]))
@@ -926,12 +1150,28 @@ def compare_selected_clusters_across_param(
             inside &= df["cluster_id"] != -1
 
         df = df.loc[inside].copy()
-        if spread:
-            df["x"] = df["x"] + step * swept_values.index(entry["swept_value"])
         df[swept_param_name] = str(entry["swept_value"])
-        frames.append(df)
+        frames[entry["swept_value"]] = df
 
-    df_to_plot = pd.concat(frames, ignore_index=True)
+    title = title or (
+        f"clusters {list(selected_clusters)} at {swept_param_name}="
+        f"{chosen_value}, across every {swept_param_name}"
+    )
+
+    if spread:
+        label = _PARAM_LABELS.get(swept_param_name, swept_param_name)
+        titles = {
+            value: f"{label} = {value}"
+            + (f", n_min {n_mins[value]}" if n_min is not None else "")
+            for value in frames
+        }
+        return _clusters_in_linked_subplots(
+            frames, titles, low, high, ion_colors, n_cols, hover,
+            marker_size, title, figsize,
+        )
+
+    colours = _colour_steps(swept_values, colorscale)
+    df_to_plot = pd.concat(frames.values(), ignore_index=True)
 
     fig = px.scatter_3d(
         df_to_plot, x="x", y="y", z="z",
@@ -942,19 +1182,17 @@ def compare_selected_clusters_across_param(
     )
     fig.update_traces(marker_size=marker_size, opacity=0.8)
 
-    if not spread:
-        # graded sizes, so five copies of the same atom do not reduce to
-        # whichever colour happened to be drawn last
-        rank = {str(value): i for i, value in enumerate(swept_values)}
-        for trace in fig.data:
-            trace.marker.size = (
-                marker_size + size_step * (len(swept_values) - 1 - rank[trace.name])
-            )
+    # graded sizes, so five copies of the same atom do not reduce to whichever
+    # colour happened to be drawn last
+    rank = {str(value): i for i, value in enumerate(swept_values)}
+    for trace in fig.data:
+        trace.marker.size = (
+            marker_size + size_step * (len(swept_values) - 1 - rank[trace.name])
+        )
+
+    figsize = figsize or (900, 750)
     fig.update_layout(
-        title=title or (
-            f"clusters {list(selected_clusters)} at {swept_param_name}="
-            f"{chosen_value}, across every {swept_param_name}"
-        ),
+        title=title,
         scene=dict(
             xaxis_title="x [nm]", yaxis_title="y [nm]", zaxis_title="z [nm]",
             aspectmode="data",
@@ -964,6 +1202,367 @@ def compare_selected_clusters_across_param(
         width=figsize[0],
         height=figsize[1],
         margin=dict(l=20, r=20, t=60, b=20),
+    )
+
+    return fig
+
+
+def _clusters_in_linked_subplots(
+    frames, titles, low, high, ion_colors, n_cols, hover,
+    marker_size, title, figsize,
+):
+    """`compare_selected_clusters_across_param(spread=True)`'s figure."""
+
+    values = sorted(frames)
+    n_cols = max(1, min(n_cols, len(values)))
+    n_rows = -(-len(values) // n_cols)
+
+    # one colour per ion across every subplot: px would otherwise number the
+    # ions ion_colors does not name afresh in each subplot, in whatever order
+    # they turn up there
+    colour_key = {
+        value: np.where(df["cluster_id"] != -1, df["ion"].astype(str), "unclustered")
+        for value, df in frames.items()
+    }
+    keys = sorted(set(np.concatenate(list(colour_key.values()))) - {"unclustered"})
+    fallback = iter(px.colors.qualitative.Plotly * (len(keys) // 10 + 1))
+    colours = {
+        key: (ion_colors or {}).get(key) or next(fallback) for key in keys
+    }
+    colours["unclustered"] = "lightgrey"
+
+    specs = [
+        [{"type": "scene"} if row * n_cols + col < len(values) else None
+         for col in range(n_cols)]
+        for row in range(n_rows)
+    ]
+    fig = LinkedScenesFigure(make_subplots(
+        rows=n_rows, cols=n_cols, specs=specs,
+        subplot_titles=[titles[value] for value in values],
+        horizontal_spacing=0.02, vertical_spacing=min(0.06, 0.5 / max(n_rows, 2)),
+    ))
+
+    # every subplot frames the same box at the same proportions, so an atom is
+    # in the same place in all of them
+    extent = high - low
+    box = dict(
+        xaxis=dict(range=[low["x"], high["x"]], title="x [nm]"),
+        yaxis=dict(range=[low["y"], high["y"]], title="y [nm]"),
+        zaxis=dict(range=[low["z"], high["z"]], title="z [nm]"),
+        aspectmode="manual",
+        aspectratio=(extent / extent.max()).to_dict(),
+    )
+
+    in_legend = set()
+    for i, value in enumerate(values):
+        row, col = divmod(i, n_cols)
+        df = _with_cluster_label(frames[value].assign(colour=colour_key[value]))
+
+        if len(df):
+            panel = px.scatter_3d(
+                df, x="x", y="y", z="z", color="colour",
+                color_discrete_map=colours,
+                category_orders={"colour": list(colours)},
+                labels={"colour": "ion"},
+                hover_name="cluster",
+                hover_data=hover_columns(df, hover, skip=("cluster", "ion")),
+            )
+            for trace in panel.data:
+                trace.showlegend = trace.name not in in_legend
+                in_legend.add(trace.name)
+                fig.add_trace(trace, row=row + 1, col=col + 1)
+
+        fig.update_scenes(box, row=row + 1, col=col + 1)
+
+    fig.update_traces(marker_size=marker_size, opacity=0.8)
+
+    figsize = figsize or (330 * n_cols + 120, 330 * n_rows + 90)
+    fig.update_layout(
+        title=title,
+        legend_title_text="ion",
+        template="simple_white",
+        width=figsize[0],
+        height=figsize[1],
+        margin=dict(l=10, r=10, t=80, b=10),
+    )
+
+    return fig
+
+
+# the two reference compositions drawn beside the clusters
+_POOLED_LABEL = "all clusters"
+_MATRIX_LABEL = "matrix"
+_REFERENCE_STYLE = {
+    _POOLED_LABEL: dict(symbol="star", color="#222222"),
+    _MATRIX_LABEL: dict(symbol="diamond", color="#8c8c8c"),
+}
+
+
+def _reference_compositions(cluster_stats, unclustered_stats, ions):
+    """{label: counts per ion} for all clusters pooled and for the matrix.
+
+    Pooled means every cluster's atoms summed before normalising, so a big
+    cluster weighs in proportion to its atoms - the composition of "the
+    clustered material", not the average cluster.
+    """
+
+    references = {_POOLED_LABEL: cluster_stats[ions].sum()}
+    if unclustered_stats is not None and len(unclustered_stats):
+        matrix = unclustered_stats.reindex(columns=ions, fill_value=0)
+        references[_MATRIX_LABEL] = matrix.iloc[0]
+
+    return {
+        label: counts.astype(float) for label, counts in references.items()
+        if counts.sum() > 0
+    }
+
+
+def plot_cluster_ternary(
+    cluster_stats,
+    ions=("Mn", "Ni", "Si"),
+    unclustered_stats=None,
+    size_column: str = "cluster_size",
+    title: str = None,
+    figsize: tuple = (760, 660),
+    max_marker_size: float = 26,
+):
+    """Ternary of three elements: one point per cluster, plus the matrix.
+
+    Each cluster is placed by those three elements alone - their atom counts
+    normalised to 100% - and sized by `size_column`. Edge clusters get the
+    second of `EDGE_CLUSTER_COLORS`, as in `plot_cluster_alpha_shapes`. Two
+    reference points sit among them: **all clusters** pooled (every cluster's
+    atoms summed, so a big cluster weighs more) and, with `unclustered_stats`,
+    the **matrix**.
+
+    A cluster holding none of the three has no place on the triangle and is
+    left out; the title says how many were. An element with no column at all
+    (not ranged in this dataset) is counted as zero, with a warning.
+
+    Parameters
+    ----------
+    cluster_stats : pandas.DataFrame
+        One row per cluster with a count column per element -
+        `analyse_clusters` output, after the corrections.
+    ions : three element names, corners a, b, c of the triangle.
+    unclustered_stats : pandas.DataFrame, optional
+        `summarise_unclustered` output, for the matrix point.
+    size_column : str
+        What marker area is proportional to; falls back to `size`.
+    """
+
+    ions = list(ions)
+    if len(ions) != 3:
+        raise ValueError(f"a ternary needs exactly three elements, not {ions}")
+
+    stats = cluster_stats.copy()
+    missing = [ion for ion in ions if ion not in stats.columns]
+    if missing:
+        warnings.warn(
+            f"no {missing} column in these cluster stats - counted as zero",
+            stacklevel=2,
+        )
+        for ion in missing:
+            stats[ion] = 0
+    if size_column not in stats.columns:
+        size_column = "size"
+
+    total = stats[ions].sum(axis=1)
+    placed = stats.loc[total > 0].copy()
+    percent = placed[ions].div(total[total > 0], axis=0) * 100
+    n_left_out = int((total == 0).sum())
+
+    sizes = placed[size_column].astype(float)
+    marker_size = max_marker_size * np.sqrt(sizes / sizes.max()) if len(sizes) else sizes
+    marker_size = np.maximum(marker_size, 4)
+
+    corner_lines = [
+        f"{ion}: %{{{axis}:.1f}}% (%{{customdata[{i + 2}]}} atoms)"
+        for i, (ion, axis) in enumerate(zip(ions, "abc"))
+    ]
+
+    fig = go.Figure()
+
+    is_edge = (
+        placed["is_edge_cluster"].astype(bool) if "is_edge_cluster" in placed.columns
+        else pd.Series(False, index=placed.index)
+    )
+    groups = [(False, "interior clusters"), (True, "edge clusters")]
+    if not is_edge.any():
+        groups = [(False, "clusters")]
+
+    for edge, name in groups:
+        rows = is_edge == edge
+        if not rows.any():
+            continue
+        fig.add_trace(go.Scatterternary(
+            a=percent.loc[rows, ions[0]], b=percent.loc[rows, ions[1]],
+            c=percent.loc[rows, ions[2]],
+            mode="markers", name=name,
+            marker=dict(
+                size=marker_size[rows.to_numpy()], color=EDGE_CLUSTER_COLORS[edge],
+                opacity=0.7, line=dict(width=0.5, color="white"),
+            ),
+            customdata=np.column_stack([
+                placed.loc[rows, "cluster_id"], placed.loc[rows, size_column],
+                placed.loc[rows, ions].to_numpy(),
+            ]),
+            hovertemplate=(
+                "<b>Cluster %{customdata[0]}</b><br>"
+                f"{size_column}: " "%{customdata[1]}<br>"
+                + "<br>".join(corner_lines) + "<extra></extra>"
+            ),
+        ))
+
+    for label, counts in _reference_compositions(stats, unclustered_stats, ions).items():
+        share = counts / counts.sum() * 100
+        fig.add_trace(go.Scatterternary(
+            a=[share[ions[0]]], b=[share[ions[1]]], c=[share[ions[2]]],
+            mode="markers", name=label,
+            marker=dict(size=16, line=dict(width=1.5, color="white"),
+                        **_REFERENCE_STYLE[label]),
+            customdata=[[label, int(counts.sum()), *counts.astype(int)]],
+            hovertemplate=(
+                "<b>%{customdata[0]}</b><br>"
+                + "<br>".join(corner_lines) + "<extra></extra>"
+            ),
+        ))
+
+    title = title or f"{' - '.join(ions)} composition of each cluster"
+    if n_left_out:
+        title += f"  ({n_left_out} clusters with none of the three left out)"
+
+    fig.update_layout(
+        title=title,
+        ternary=dict(
+            sum=100,
+            aaxis=dict(title=ions[0], ticksuffix="%"),
+            baxis=dict(title=ions[1], ticksuffix="%"),
+            caxis=dict(title=ions[2], ticksuffix="%"),
+        ),
+        legend=dict(itemsizing="constant"),
+        template="simple_white",
+        width=figsize[0],
+        height=figsize[1],
+    )
+
+    return fig
+
+
+def plot_cluster_composition_bars(
+    cluster_stats,
+    ions: list,
+    unclustered_stats=None,
+    ion_colors: dict = None,
+    size_column: str = "cluster_size",
+    title: str = None,
+    figsize: tuple = (1000, 480),
+    max_ticks: int = 40,
+):
+    """Composition of every cluster, one 100%-stacked column each.
+
+    One column per cluster, smallest on the left, each normalised to 100%, so
+    every column is the same height and only the mix changes - the question
+    it answers is "does the composition change with cluster size". Beside
+    them, in their own panel: **all clusters** pooled (every cluster's atoms
+    summed, so a big cluster weighs more) and, with `unclustered_stats`, the
+    **matrix**.
+
+    The percentages are over `ions` only. Pass the elements `size_column`
+    counts - for `cluster_size`, the core and bulk ions minus
+    `elements_to_exclude` - and a column's ions add up to exactly the size
+    printed under it. Elements without a column, or with no atoms anywhere,
+    are dropped from the legend.
+
+    Parameters
+    ----------
+    cluster_stats : pandas.DataFrame
+        One row per cluster with a count column per element.
+    ions : list
+        Elements to show, stacked bottom to top in this order.
+    unclustered_stats : pandas.DataFrame, optional
+        `summarise_unclustered` output, for the matrix column.
+    ion_colors : dict, optional
+        Element -> colour, as `get_ion_colours_from_rrng` returns.
+    size_column : str
+        What the columns are ordered by and labelled with; falls back to
+        the sum over `ions`.
+    max_ticks : int
+        At most this many clusters get a size label, so a tip with hundreds
+        of clusters stays readable (every column is still hoverable).
+    """
+
+    stats = cluster_stats.copy()
+    ions = [ion for ion in ions if ion in stats.columns]
+    references = _reference_compositions(stats, unclustered_stats, ions)
+    in_matrix = references.get(_MATRIX_LABEL, pd.Series(0.0, index=ions))
+    ions = [ion for ion in ions if stats[ion].sum() > 0 or in_matrix[ion] > 0]
+    if not ions:
+        raise ValueError("none of the given elements has any atoms in these clusters")
+    references = _reference_compositions(stats, unclustered_stats, ions)
+
+    stats["_total"] = stats[ions].sum(axis=1)
+    if size_column not in stats.columns:
+        size_column = "_total"
+    stats = stats.loc[stats["_total"] > 0].sort_values([size_column, "cluster_id"])
+    percent = stats[ions].div(stats["_total"], axis=0) * 100
+
+    # categories are the ids (unique), the tick text is the size (not)
+    labels = "Cluster " + stats["cluster_id"].astype(str)
+    step = max(1, int(np.ceil(len(stats) / max_ticks)))
+
+    fig = make_subplots(
+        rows=1, cols=2, shared_yaxes=True,
+        column_widths=[0.86, 0.14], horizontal_spacing=0.02,
+    )
+    colours = ion_colors or {}
+
+    for ion in ions:
+        fig.add_trace(go.Bar(
+            x=labels, y=percent[ion], name=ion, legendgroup=ion,
+            marker_color=colours.get(ion),
+            customdata=np.column_stack(
+                [stats["cluster_id"], stats[size_column], stats[ion]]
+            ),
+            hovertemplate=(
+                "<b>Cluster %{customdata[0]}</b><br>"
+                f"{'size' if size_column == '_total' else size_column}: "
+                "%{customdata[1]}<br>"
+                f"{ion}: " "%{y:.1f}% (%{customdata[2]} atoms)<extra></extra>"
+            ),
+        ), row=1, col=1)
+
+        if references:
+            fig.add_trace(go.Bar(
+                x=list(references),
+                y=[counts[ion] / counts.sum() * 100 for counts in references.values()],
+                name=ion, legendgroup=ion, showlegend=False,
+                marker_color=colours.get(ion),
+                customdata=[[int(counts[ion])] for counts in references.values()],
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    f"{ion}: " "%{y:.1f}% (%{customdata[0]} atoms)<extra></extra>"
+                ),
+            ), row=1, col=2)
+
+    fig.update_xaxes(
+        tickmode="array", tickvals=labels.iloc[::step],
+        ticktext=stats[size_column].iloc[::step].astype(int).astype(str),
+        title=(
+            f"clusters, smallest to largest (labelled with "
+            f"{'size' if size_column == '_total' else size_column})"
+        ),
+        row=1, col=1,
+    )
+    fig.update_yaxes(range=[0, 100], title="composition [at.%]", row=1, col=1)
+    fig.update_layout(
+        title=title or "composition of each cluster, smallest to largest",
+        barmode="stack",
+        bargap=0.1,
+        legend=dict(traceorder="reversed"),
+        template="simple_white",
+        width=figsize[0],
+        height=figsize[1],
     )
 
     return fig

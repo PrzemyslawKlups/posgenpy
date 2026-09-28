@@ -1102,3 +1102,38 @@ def test_the_sweep_plots_shade_the_percolating_swept_values(percolating_sweep):
 
     figure, ax = pgp.plot_atom_ratio_across_swept_param(percolating_sweep, "Order")
     assert figure is not None
+
+
+def test_resume_refuses_files_from_a_different_sweep(tip, tmp_path):
+    """Two sweeps' cells in one folder would be read as one grid, and the n_min
+    off mixed control runs would be wrong with nothing to show for it."""
+    pos_df, rrng_df = tip
+    kw = dict(
+        orders=[5], dmax_values=[0.4, 0.6], bulk_ions=BULK_IONS,
+        n_relabel_runs=2, output_dir=tmp_path, prefix="t", verbose=False,
+    )
+    run_fast_grid_sweep(pos_df, rrng_df, CORE_IONS, **kw)
+
+    with pytest.raises(ValueError, match="different inputs.*core_ions"):
+        run_fast_grid_sweep(pos_df, rrng_df, ["Cu"], **kw)
+    with pytest.raises(ValueError, match="n_min: 1 there, 3 now"):
+        run_fast_grid_sweep(pos_df, rrng_df, CORE_IONS, **dict(kw, n_min=3))
+
+    # recomputing on purpose still works, and records the new inputs
+    run_fast_grid_sweep(pos_df, rrng_df, ["Cu"], **dict(kw, resume=False))
+    run_fast_grid_sweep(pos_df, rrng_df, ["Cu"], **kw)
+
+
+def test_resume_checks_a_folder_from_before_inputs_were_recorded(tip, tmp_path):
+    """What a stopped sweep followed by a changed core-ion list leaves behind:
+    one cell clustered on Cu alone, the others about to be on Cu+Ni."""
+    pos_df, rrng_df = tip
+    kw = dict(
+        orders=[5], bulk_ions=BULK_IONS, n_relabel_runs=2,
+        output_dir=tmp_path, prefix="t", verbose=False,
+    )
+    run_fast_grid_sweep(pos_df, rrng_df, ["Cu"], dmax_values=[0.4], **kw)
+    (tmp_path / "t_fast_grid_inputs.json").unlink()
+
+    with pytest.raises(ValueError, match=r"1 cells .* order=5 dmax=0.4 \("):
+        run_fast_grid_sweep(pos_df, rrng_df, CORE_IONS, dmax_values=[0.4, 0.6], **kw)
