@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.ipynb_checkpoints/
+
+# generated cluster-search output (sweeps, relabel runs, parquet/manifests)
+pygenpy_output_pythononly/
+pygenpy_output_grid/
+*_random/
+*_sweep_manifest.json
+
+# parity config points at reference data outside the repo (machine specific);
+# parity_datasets.example.json is the committed template
+tests/parity_datasets.json
+.pytest_cache/
+PosgenPy_Grid_Analysis_Example_PythonOnly copy.ipynb
+
+# synthetic test cube, regenerated from examples/generateTestPos_*.xml on first use
+examples/posgenpyTest_*.pos
