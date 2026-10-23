@@ -1,7 +1,8 @@
 [project]
 name = "posgenpy"
-version = "0.2.0"
+version = "2.0.0"
 description = "Pure-Python APT cluster-search analysis (no posgen/libatomprobe dependency)"
+readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "numpy",
