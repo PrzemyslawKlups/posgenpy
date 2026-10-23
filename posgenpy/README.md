@@ -508,6 +508,5 @@ a dumbbell that should have been two clusters looks like one.
 
 ## Authors
 
-posgenpy was created by Dan Hayley, Andy London, James Famelton, Hazel
-Gardner, and Przemek Klups. This pure-Python engine replaces the original
-posgen/libatomprobe-based implementation.
+posgenpy was created by Przemek Klups, Dan Hayley, Andy London, and Hazel
+Gardner. This pure-Python engine, co-created with Claude Code, replaces the original posgen/libatomprobe-based implementation.

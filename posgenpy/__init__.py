@@ -5,6 +5,9 @@ is now split across io.py, cluster.py, sweep.py, corrections.py, viz.py.
 """
 from .io import (
     read_pos_to_df,
+    write_pos,
+    write_apt,
+    export_cluster_pos_files,
     range_info_from_rrng,
     read_rrng,
     read_apt_range_file,
@@ -72,6 +75,7 @@ from .viz import (
     DEFAULT_HOVER_COLUMNS,
     DEFAULT_GRID_HOVER_COLUMNS,
 )
+from .synthetic import generate_synthetic_pos
 from .parity import (
     load_posgen_clustering,
     compare_clusterings,
@@ -82,6 +86,9 @@ from .parity import (
 
 __all__ = [
     "read_pos_to_df",
+    "write_pos",
+    "write_apt",
+    "export_cluster_pos_files",
     "range_info_from_rrng",
     "read_rrng",
     "read_apt_range_file",
@@ -138,6 +145,7 @@ __all__ = [
     "EDGE_CLUSTER_COLORS",
     "DEFAULT_HOVER_COLUMNS",
     "DEFAULT_GRID_HOVER_COLUMNS",
+    "generate_synthetic_pos",
     "load_posgen_clustering",
     "compare_clusterings",
     "run_engine_variant",
