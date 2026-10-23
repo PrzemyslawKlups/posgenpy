@@ -1,8 +1,7 @@
-# posgenpy (pure-Python engine)
+# PosgenPy (pure-Python engine)
 
 A dependency-free, pure-Python replacement for the `posgen` C++ cluster-search
-tool. No external binary, no `libatomprobe`, no XML, no WSL/build toolchain -
-just `numpy`/`pandas`/`scikit-learn`/`scipy`.
+tool. Only `numpy`/`pandas`/`scikit-learn`/`scipy`.
 
 It implements the same "maximum separation" cluster-search algorithm posgen
 used (DBSCAN-style core classification + envelope + erosion), plus the
@@ -526,3 +525,8 @@ this repository" button reads.
 
 posgenpy was created by Przemek Klups, Dan Haley, Andy London, James Famelton
 and Hazel Gardner. This pure-Python engine, co-created with Claude Code, replaces the original posgen/libatomprobe-based implementation.
+
+## Contact
+
+Bug reports and questions are welcome as [GitHub issues](https://github.com/PrzemyslawKlups/posgenpy/issues).
+For anything else, email <p.klups@imperial.ac.uk>.
