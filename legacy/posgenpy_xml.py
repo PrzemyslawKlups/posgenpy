@@ -6,6 +6,8 @@ import pandas
 import numpy
 import matplotlib.pyplot as plt
 import os
+# from sklearn.neighbors import KDTree
+import pandas as pd
 
 string_vector = List[str]
 integer_vector = List[int]
@@ -271,11 +273,42 @@ def write_xml_with_relabelling(
 # FIXME: fix this xml_for_msm_with_relabelling.py:310: RuntimeWarning: invalid value encountered 
 # in true_divide y_values = (real_local - random_local) / real_local
 
+def calculate_cluster_size(
+    df: pd.DataFrame,
+    core_ions: list,
+    bulk_ions: list,
+    elements_to_exclude: list,
+) -> pd.Series:
+    """This function calculates cluster size based on elements provided.
+    It can also exclude elements from the list such as Fe.
+
+    Args:
+        df (pd.DataFrame): dataframe with cluster stats from cluster-stats.txt, already decomposed 
+        core_ions (list): list of core elements used to run this cluster analysis
+        bulk_ions (list): list of bulk elements used to run this cluster analysis
+        elements_to_exclude (list): list of elements to exclude (e.g. Fe)
+
+    Returns:
+        pd.Series: _description_
+    """
+    # combine all elements into one list
+    elements_to_include = [e for e in core_ions+bulk_ions if e not in elements_to_exclude]
+
+    # check if df is empty
+    if df.empty:
+        data_to_insert = [0 for col in df.columns]
+        df = pd.DataFrame(columns=[df.columns], data=[data_to_insert])
+        
+    # get cluster size series
+    cluster_size = df.loc[:, elements_to_include].sum(axis=1)
+
+    return cluster_size
+
 def prepare_data_for_real_random_graphs(
-        swept_parameters: float_vector,
-        random_runs: int,
-        xml_files: string_vector,
-        n_min_values: integer_vector,
+    swept_parameters: float_vector,
+    random_runs: int,
+    xml_files: string_vector,
+    n_min_values: integer_vector,
 ) -> dict:
     """
     This function is used to prepare random and real cluster data for other plotting 
@@ -291,6 +324,7 @@ def prepare_data_for_real_random_graphs(
 
     # find number of clusters larger than n_min
     # find all real clusters for all d_max values
+    # TODO this function is also wrong as it uses core ions only
     all_data = {}
 
     for i, swept_parameter in enumerate(swept_parameters):
@@ -349,7 +383,8 @@ def plot_real_cluster_ratio_across_swept_param(
         n_min_values: integer_vector,
         threshold: float = 0.95,
         graph_alpha: float = 0.6,
-        figsize: tuple = (9, 5)
+        figsize: tuple = (9, 5),
+        using_jupyter=True,
 ) -> None:
     """
     After sweeping through cluster search swept_parameter with posgen and generating 
@@ -400,7 +435,7 @@ def plot_real_cluster_ratio_across_swept_param(
     ax.set_ylabel("$(N_{det}-N_{rand})/N_{det}$")
     ax.plot([min(swept_parameters), max(swept_parameters)], [threshold, threshold], 'r-', label=f"{round(threshold*100)}%")
     ax.legend(bbox_to_anchor=(1.05, 1))
-    ax.grid()
+    # ax.grid()
     # ax.xlim(left=0)
     ax.set_ylim(top=1.1)
     ax.set_title("Fraction of Real Clusters")
@@ -408,12 +443,15 @@ def plot_real_cluster_ratio_across_swept_param(
     # skip plt.show() if run in jupyter notebook
     if "JPY_PARENT_PID" in os.environ:
         pass
+    elif using_jupyter:
+        pass
     else:
         plt.show()
 
     # todo return exact data points from the graph
     return None
 
+# TODO go through all plotting functions and make sure Order values are plotted as integers 
 
 def plot_real_clusters_across_swept_param(
         swept_parameters: float_vector,
@@ -423,7 +461,8 @@ def plot_real_clusters_across_swept_param(
         n_min_values: integer_vector,
         volume: float = 0,
         graph_alpha: float = 0.7,
-        figsize: tuple = (9, 5) 
+        figsize: tuple = (9, 5),
+        using_jupyter=True, 
 ) -> None:
     """
     After sweeping through cluster search swept_parameter with posgen and generating the 
@@ -488,13 +527,15 @@ def plot_real_clusters_across_swept_param(
     else:
         ax.set_ylabel("Number of identified clusters")
     ax.legend(bbox_to_anchor=(1.3, 1))
-    ax.grid()
+    # ax.grid()
     # ax.set_xlim(left=0)
     # ax.set_ylim(top=1.1)
     ax.set_title("Real Clusters and %s Values" % swept_parameter_name)
 
     # skip plt.show() if run in jupyter notebook
     if "JPY_PARENT_PID" in os.environ:
+        pass
+    elif using_jupyter:
         pass
     else:
         plt.show()
@@ -509,12 +550,14 @@ def find_smallest_nmin(
         random_runs: int,
         xml_files: string_vector,
         n_min_values: integer_vector,
-        threshold: float = 0.95
+        threshold: float = 0.95,
+        return_real_clusters=False,
 ) -> integer_vector:
 
     """
     Reads real and random cluster searches, finds the real cluster ratio for multiple n_values
-    and returns a list of smallest n_min values for each swept_parameter that satisfies given threshold
+    and returns a list of smallest n_min values for each swept_parameter that satisfies given threshold.
+    It doesn't consider excluded Fe (or other matrix) ions.
     :param xml_files: list of full path strings with xml files for posgen cluster search
     :param swept_parameters: list with all the parameters you swept across your files
     :param swept_parameter_name: name of the swept_parameter that's being swept, needed for the graphs
@@ -533,26 +576,41 @@ def find_smallest_nmin(
 
     # find the smallest n_min in all_data:
     n_min_final = []
+    real_clusters = []
+    random_clusters = []
 
     for i, swept_parameter in enumerate(swept_parameters):
+        
         n_min_final.append(0)
+        real_clusters.append(all_data[swept_parameter]["real"][n_min_values[0]])
+        random_clusters.append(all_data[swept_parameter]["random averages"][n_min_values[0]])
+
         for n in n_min_values:
             local_real = all_data[swept_parameter]["real"][n]
-            # try:
             local_random = all_data[swept_parameter]["random averages"][n]
-            # except:
-            #     local_random = 0
-            # try:
+            if local_real == 0:
+                n_min_final[i] = int(n)
+                # add local real clusters to plot them later - we want to maximise it after all
+                real_clusters[i] = int(local_real)
+                random_clusters[i] = int(local_random)
+                print(f"{swept_parameter_name}: {swept_parameter} | n_min: {n} | fraction: FAILED | real clusters: {local_real}")
+                break
+            
             fraction_of_real_clusters = (local_real - local_random) / local_real
-            # except:
-            #     fraction_of_real_clusters = 0
-
+            
             if fraction_of_real_clusters > threshold:
                 n_min_final[i] = int(n)
+                # add local real clusters to plot them later - we want to maximise it after all
+                # TODO update the code in the repo
+                real_clusters[i] = int(local_real)
+                random_clusters[i] = int(local_random)
                 print(f"{swept_parameter_name}: {swept_parameter} | n_min: {n} | fraction: {round(fraction_of_real_clusters, 3)} | real clusters: {local_real}")
                 break
 
-    return n_min_final
+    if return_real_clusters:
+        return n_min_final, real_clusters, random_clusters
+    else:
+        return n_min_final
 
 
 def prepare_data_for_composition_graphs(
@@ -597,7 +655,8 @@ def prepare_data_for_composition_graphs(
         # local_df["Fm"] = local_df["Fm"] * 0
         # add total ions in cluster value
 
-        local_df["Cluster Size"] = local_df.iloc[:, 3:-2].sum(axis=1)
+        # local_df["Cluster Size"] = local_df.iloc[:, 3:-2].sum(axis=1) # no longer needed
+        
         # change n_min
         local_df = local_df[local_df["Cluster Size"] >= n_min_values_for_swept_parameters[i]]
 
@@ -621,7 +680,8 @@ def plot_cluster_composition_across_swept_param_absolute(
         exclude_ions=None,
         graph_alpha: float = 0.7,
         ion_colors: dict = {},
-        figsize: tuple = (9, 5)
+        figsize: tuple = (9, 5),
+        using_jupyter=True,
 ) -> None:
     """
     Plot graph with absolute composition of core ions across swept parameter values.
@@ -667,13 +727,15 @@ def plot_cluster_composition_across_swept_param_absolute(
     ax.set_xlabel(swept_parameter_name)
     ax.set_ylabel("Cluster composition [at.%]")
     ax.legend(bbox_to_anchor=(1.2, 1))
-    ax.grid()
+    # ax.grid()
     # ax.set_xlim(left=0)
     # ax.set_ylim(top=1.1)
     ax.set_title(f"Absolute Cluster Composition and %s Values" % swept_parameter_name)
 
     # skip plt.show() if run in jupyter notebook
     if "JPY_PARENT_PID" in os.environ:
+        pass
+    elif using_jupyter:
         pass
     else:
         plt.show()
@@ -691,7 +753,8 @@ def plot_cluster_composition_across_swept_param_relative(
         exclude_ions=None,
         graph_alpha: float = 1,
         ion_colors: dict = {},
-        figsize: tuple = (9, 5)
+        figsize: tuple = (9, 5),
+        using_jupyter=True,
 ) -> None:
 
     """
@@ -771,13 +834,15 @@ def plot_cluster_composition_across_swept_param_relative(
     ax.set_xlabel(swept_parameter_name)
     ax.set_ylabel("Corrected relative cluster composition [at.%]")
     ax.legend(bbox_to_anchor=(1.05, 1))
-    # ax.grid()
+    # # ax.grid()
     # ax.set_xlim(left=0)
     # ax.set_ylim(top=1.1)
     ax.set_title(f"Relative Cluster Composition and %s Values" % swept_parameter_name)
 
     # skip plt.show() if run in jupyter notebook
     if "JPY_PARENT_PID" in os.environ:
+        pass
+    elif using_jupyter:
         pass
     else:
         plt.show()
@@ -792,3 +857,84 @@ def seconds_to_hhmmss(seconds:float):
     time_string = f"{hh}h {mm}m {ss}s"
     return time_string
 
+# size distribution vs order
+# works correctly on decomposed cluster stats file, 
+# include all ions in the txt file
+
+constant_cluster_stats_columns = [
+    "X", "Y", "Z", "Unranged", "r_gyration", "Da", "Cluster ID", "x", "y", "z", 
+    "Closest Cluster ID", "Closest Cluster Distance", "convexhull_volume", "convexhull_area", 
+    "Cluster Size", "Cluster Size without Fe", "is_edge_cluster"
+]
+
+def optimise_n_min(
+    xml_files:list,
+    random_runs:int,
+    confidence_threshold:float=0.95,
+    n_min_values = numpy.arange(1, 500, 1),
+)->tuple:
+
+    # new nmin optimiser
+
+    optimised_n_min_values = []
+    optimised_real_clusters = []
+    optimised_random_clusters = []
+
+    for xml_file in xml_files:
+        
+        # open cluster stats file
+        cluster_stats_file_path = xml_file.replace(".xml", "_cluster-stats.txt")
+        csdf = pd.read_csv(cluster_stats_file_path, sep="\t")
+
+        # open all randomised cluster stats and combine them into one
+        rcsdf_array = []
+        for r in range(random_runs):
+            rcluster_stats_file_path = xml_file.replace(".xml", f"_random_{r+1}_cluster-stats.txt")
+            try:
+                this_csdf = pd.read_csv(rcluster_stats_file_path, sep="\t")
+            except:
+                this_csdf = pd.DataFrame()
+                this_csdf['Cluster Size'] = 0
+                
+            rcsdf_array.append(this_csdf.loc[:, 'Cluster Size'])
+        
+        rcsdf = pd.concat(rcsdf_array, ignore_index=True)
+
+        # run through nmin values until you reach threshold
+        n_min_found = False
+        for n_min in list(n_min_values):
+
+            # stop iterating if n_min found
+            if n_min_found:
+                continue
+            
+            # count clusters in real and random stat files
+            local_real_clusters = len(csdf.loc[csdf['Cluster Size'] >= n_min, :])
+            local_random_clusters = len(rcsdf.loc[rcsdf >= n_min]) / random_runs
+
+            # stop the run if there are no more real clusters
+            if local_real_clusters == 0:
+                optimised_n_min_values.append(n_min)
+                optimised_real_clusters.append(local_real_clusters)
+                optimised_random_clusters.append(local_random_clusters)
+                print(f"TPR cannot be reached for {xml_file}")
+                n_min_found = True
+                continue
+            else:
+                # calculate local True Positive Ratio
+                local_tpr = (local_real_clusters - local_random_clusters) / (local_real_clusters)
+
+                # check if the ratio satisfies our threshold
+                if local_tpr >= confidence_threshold:
+                    optimised_n_min_values.append(n_min)
+                    optimised_real_clusters.append(local_real_clusters)
+                    optimised_random_clusters.append(local_random_clusters)
+                    print(f"{xml_file} | Nmin:{n_min} | TPR: {round(local_tpr, 2)}\t(real:{local_real_clusters} | random:{round(local_random_clusters)})")
+                    n_min_found = True
+        
+        if not n_min_found:
+            optimised_n_min_values.append(max(n_min_values))
+            optimised_real_clusters.append(local_real_clusters)
+            optimised_random_clusters.append(local_random_clusters)
+        
+    return optimised_n_min_values, optimised_real_clusters, optimised_random_clusters

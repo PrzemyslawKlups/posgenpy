@@ -20,8 +20,37 @@ authors:
   given-names: "Paul A.J."
 - family-names: "Moody"
   given-names: "Michael P."
-title: "PosgenPy: An automated and reproducible approach to assessing the validity of cluster search parameters in atom probe tomography datasets"
-version: 1.1.0
-doi: 10.5281/zenodo.1234
-date-released: 2022-11-12
+title: "PosgenPy"
+version: 2.0.0
+date-released: 2026-10-23
 url: "https://github.com/PrzemyslawKlups/posgenpy"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Klupś"
+    given-names: "Przemysław"
+    orcid: "https://orcid.org/0000-0002-6871-3221"
+  - family-names: "Haley"
+    given-names: "Daniel"
+  - family-names: "London"
+    given-names: "Andrew J."
+  - family-names: "Gardner"
+    given-names: "Hazel"
+  - family-names: "Famelton"
+    given-names: "James"
+  - family-names: "Jenkins"
+    given-names: "Benjamin M."
+  - family-names: "Hyde"
+    given-names: "Jonathan M."
+  - family-names: "Bagot"
+    given-names: "Paul A.J."
+  - family-names: "Moody"
+    given-names: "Michael P."
+  title: "PosgenPy: An Automated and Reproducible Approach to Assessing the Validity of Cluster Search Parameters in Atom Probe Tomography Datasets"
+  journal: "Microscopy and Microanalysis"
+  volume: 28
+  issue: 4
+  start: 1066
+  end: 1075
+  year: 2022
+  doi: 10.1017/S1431927621012368
