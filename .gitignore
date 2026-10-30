@@ -6,6 +6,7 @@ __pycache__/
 # generated cluster-search output (sweeps, relabel runs, parquet/manifests)
 pygenpy_output_pythononly/
 pygenpy_output_grid/
+pygenpy_output_sweep/
 *_random/
 *_sweep_manifest.json
 

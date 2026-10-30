@@ -33,6 +33,10 @@ RUN_TYPE_COLORS = {"real": "#063970", "random": "#E28743"}
 # the same two hues, for the other binary split in this workflow
 EDGE_CLUSTER_COLORS = {False: "#063970", True: "#E28743"}
 
+# one colour per cluster when several are drawn together: plotly's Bold, a
+# qualitative palette of 11 hues chosen to be told apart rather than ranked
+CLUSTER_COLORS = px.colors.qualitative.Bold
+
 # columns that describe the run rather than the cluster - shown first in a
 # tooltip, because they are what you need to reproduce or look up the point
 _LEADING_HOVER_COLUMNS = ["cluster_id", "run", "run_type", "order", "dmax"]
@@ -127,6 +131,15 @@ def _with_cluster_label(df):
     if "cluster_id" in out.columns:
         out["cluster"] = "Cluster " + out["cluster_id"].astype(str)
     return out
+
+
+def _resolve_color_by(color_by, clusters):
+    """"ion" or "cluster_id" - by cluster whenever more than one is asked for."""
+    if color_by is None:
+        return "cluster_id" if len(set(clusters)) > 1 else "ion"
+    if color_by not in ("ion", "cluster_id"):
+        raise ValueError('color_by must be "ion", "cluster_id" or None')
+    return color_by
 
 
 def _limit_points(stats, x, max_points, seed=0):
@@ -861,6 +874,7 @@ def show_clusters_in_pos(
     ion_colors: dict = None,
     hover: list = None,
     marker_size: int = 2,
+    color_by: str = None,
 ):
     """
     3D scatter of one or more selected clusters, atom by atom.
@@ -873,6 +887,13 @@ def show_clusters_in_pos(
     be traced back to a row of the original pos file), which means a cluster
     picked out of `plot_size_distribution` can be confirmed here, and a cluster
     spotted here can be found in the stats table.
+
+    color_by: "ion" colours every atom by its ion, with `ion_colors` (the
+    range file's, as `get_ion_colours_from_rrng` reads them). "cluster_id"
+    gives each cluster its own colour from `CLUSTER_COLORS`, in the order
+    `clusters_to_plot` lists them, so clusters that touch can be told apart.
+    None (the default) is "cluster_id" when more than one cluster is asked
+    for and "ion" for a single one.
     """
 
     if isinstance(clustered_atoms, (str, Path)):
@@ -880,17 +901,42 @@ def show_clusters_in_pos(
     else:
         df = clustered_atoms
 
+    color_by = _resolve_color_by(color_by, clusters_to_plot)
+
     selected = df.loc[df["cluster_id"].isin(clusters_to_plot)]
     labelled = _with_cluster_label(selected)
+    hover_data = hover_columns(labelled, hover, skip=("cluster",))
+
+    if color_by == "ion":
+        colour = dict(color="ion", color_discrete_map=ion_colors or {})
+    else:
+        labels = [f"Cluster {int(c)}" for c in clusters_to_plot]
+        colour = dict(
+            color="cluster",
+            color_discrete_map={
+                label: CLUSTER_COLORS[i % len(CLUSTER_COLORS)]
+                for i, label in enumerate(labels)
+            },
+            category_orders={"cluster": labels},
+        )
+        # already the tooltip's heading
+        hover_data["cluster"] = False
 
     fig = px.scatter_3d(
-        labelled, x="x", y="y", z="z", color="ion",
-        color_discrete_map=ion_colors or {},
+        labelled, x="x", y="y", z="z", **colour,
         hover_name="cluster" if "cluster" in labelled.columns else None,
-        hover_data=hover_columns(labelled, hover, skip=("cluster",)),
+        hover_data=hover_data,
     )
     fig.update_traces(marker_size=marker_size)
-    fig.update_layout(title=f"Cluster ID(s): {clusters_to_plot}")
+    fig.update_layout(
+        title=f"Cluster ID(s): {clusters_to_plot}",
+        # one nm is the same length on every axis, so a cluster is drawn the
+        # shape it is rather than stretched to fill a cube
+        scene=dict(
+            xaxis_title="x [nm]", yaxis_title="y [nm]", zaxis_title="z [nm]",
+            aspectmode="data",
+        ),
+    )
     fig.show()
 
     return selected
@@ -1036,6 +1082,7 @@ def compare_selected_clusters_across_param(
     include_unclustered: bool = False,
     spread: bool = False,
     ion_colors: dict = None,
+    color_by: str = "cluster_id",
     n_cols: int = 3,
     colorscale: str = "Viridis",
     marker_size: int = 3,
@@ -1050,12 +1097,13 @@ def compare_selected_clusters_across_param(
     piece of the tip. Two ways to lay that out:
 
     - **`spread=True`**: one 3D subplot per value, `n_cols` to a row, titled
-      by the value ("Order = 5") and coloured by ion (`ion_colors`). Every
-      subplot frames the same box, and turning or zooming one turns all the
-      others with it (see `LinkedScenesFigure`), so a cluster breaking in two
-      as the Order rises is one blob in one subplot and two in the next,
-      seen from the same side. Clicking an ion in the legend hides it
-      everywhere.
+      by the value ("Order = 5") and coloured by ion or by cluster
+      (`color_by`). Every subplot frames the same box, and turning or zooming
+      one turns all the others with it (see `LinkedScenesFigure`), so a
+      cluster breaking in two as the Order rises is one blob in one subplot
+      and two in the next, seen from the same side. Coloured by ion, clicking
+      an ion in the legend hides it everywhere; coloured by cluster, the
+      legend lists each subplot's clusters under its title.
     - **`spread=False`** (default): every value in one view, **each value in
       its own colour**. Every value draws the *same atoms* at the *same
       coordinates*, so drawn flat they would hide each other; the markers are
@@ -1091,11 +1139,29 @@ def compare_selected_clusters_across_param(
     ion_colors : dict, optional
         Ion -> colour, as `get_ion_colours_from_rrng` returns, for
         `spread=True`. Ions it does not name get plotly's default colours.
+    color_by : "cluster_id", "ion" or None
+        How `spread=True` colours its atoms. "cluster_id" (the default) gives
+        each of `selected_clusters` its own colour from `CLUSTER_COLORS`, in
+        the order they are listed, and follows it to the other values by the
+        atoms it shares: at each value, the cluster holding most of a
+        selected cluster's atoms takes its colour, and every other cluster in
+        the box - a piece split off it, or a neighbour - gets one of the
+        remaining colours. So even one selected cluster splitting is one
+        colour becoming two. "ion" uses `ion_colors`. None picks as
+        `show_clusters_in_pos` does: by cluster for several, by ion for one.
+        `spread=False` colours by swept value and ignores it.
     n_cols : int
         Subplots per row when `spread=True`.
     colorscale : str
         The per-value colour ramp when `spread=False`.
     """
+
+    if color_by == "ion" and not spread:
+        warnings.warn(
+            "color_by='ion' is ignored with spread=False, which colours each "
+            "swept value instead; pass spread=True to colour by ion"
+        )
+    color_by = _resolve_color_by(color_by, selected_clusters)
 
     chosen_entries = [
         e for e in sweep_manifest
@@ -1165,9 +1231,14 @@ def compare_selected_clusters_across_param(
             + (f", n_min {n_mins[value]}" if n_min is not None else "")
             for value in frames
         }
+        cluster_colours = None
+        if color_by == "cluster_id":
+            cluster_colours = _track_cluster_colours(
+                frames, chosen_df, selected_clusters
+            )
         return _clusters_in_linked_subplots(
             frames, titles, low, high, ion_colors, n_cols, hover,
-            marker_size, title, figsize,
+            marker_size, title, figsize, cluster_colours,
         )
 
     colours = _colour_steps(swept_values, colorscale)
@@ -1207,29 +1278,113 @@ def compare_selected_clusters_across_param(
     return fig
 
 
+def _track_cluster_colours(frames, chosen_atoms, selected_clusters):
+    """{swept value: {cluster_id: colour}} for `color_by="cluster_id"`.
+
+    Cluster ids are per value, so colouring by id alone would give the same
+    precipitate a different colour in every subplot. Each value's clusters are
+    matched to `selected_clusters` by the atoms they share instead: the one
+    holding most of a selected cluster's atoms takes its colour. Every other
+    cluster in the box gets one of the colours the selection left, biggest
+    first.
+    """
+
+    selected = list(dict.fromkeys(int(c) for c in selected_clusters))
+    selected_colours = {
+        cluster: CLUSTER_COLORS[i % len(CLUSTER_COLORS)]
+        for i, cluster in enumerate(selected)
+    }
+    spare = CLUSTER_COLORS[len(selected):] or CLUSTER_COLORS
+
+    # atoms are matched by ionIdx; a file without it falls back on row order,
+    # which is the same in every cell of a sweep
+    def atom_key(df):
+        return df["ionIdx"] if "ionIdx" in df.columns else df.index.to_series()
+
+    parent = pd.Series(
+        chosen_atoms["cluster_id"].to_numpy(),
+        index=atom_key(chosen_atoms).to_numpy(),
+    )
+
+    colours = {}
+    for value, df in frames.items():
+        clustered = df.loc[df["cluster_id"] != -1]
+
+        # (cluster here, selected cluster) -> atoms shared, most first
+        shared = pd.DataFrame({
+            "cluster_id": clustered["cluster_id"].to_numpy(),
+            "parent": atom_key(clustered).map(parent).to_numpy(),
+        }).dropna().value_counts()
+
+        matched = {}
+        for cluster, parent_id in shared.index:
+            if cluster not in matched and int(parent_id) not in matched.values():
+                matched[cluster] = int(parent_id)
+
+        these = {
+            cluster: selected_colours[parent_id]
+            for cluster, parent_id in sorted(
+                matched.items(), key=lambda item: selected.index(item[1])
+            )
+        }
+        others = [
+            c for c in clustered["cluster_id"].value_counts().index
+            if c not in matched
+        ]
+        these.update({c: spare[i % len(spare)] for i, c in enumerate(others)})
+        colours[value] = these
+
+    return colours
+
+
 def _clusters_in_linked_subplots(
     frames, titles, low, high, ion_colors, n_cols, hover,
-    marker_size, title, figsize,
+    marker_size, title, figsize, cluster_colours=None,
 ):
-    """`compare_selected_clusters_across_param(spread=True)`'s figure."""
+    """`compare_selected_clusters_across_param(spread=True)`'s figure.
+
+    Coloured by ion, or - given `cluster_colours`, as `_track_cluster_colours`
+    returns them - by cluster.
+    """
 
     values = sorted(frames)
     n_cols = max(1, min(n_cols, len(values)))
     n_rows = -(-len(values) // n_cols)
+    by_cluster = cluster_colours is not None
 
-    # one colour per ion across every subplot: px would otherwise number the
-    # ions ion_colors does not name afresh in each subplot, in whatever order
-    # they turn up there
-    colour_key = {
-        value: np.where(df["cluster_id"] != -1, df["ion"].astype(str), "unclustered")
-        for value, df in frames.items()
-    }
-    keys = sorted(set(np.concatenate(list(colour_key.values()))) - {"unclustered"})
-    fallback = iter(px.colors.qualitative.Plotly * (len(keys) // 10 + 1))
-    colours = {
-        key: (ion_colors or {}).get(key) or next(fallback) for key in keys
-    }
-    colours["unclustered"] = "lightgrey"
+    if by_cluster:
+        # a colour map per subplot: ids are per value, so "Cluster 3" in one
+        # subplot is not "Cluster 3" in the next
+        colour_key = {
+            value: np.where(
+                df["cluster_id"] != -1,
+                "Cluster " + df["cluster_id"].astype(str), "unclustered",
+            )
+            for value, df in frames.items()
+        }
+        panel_colours = {
+            value: {
+                f"Cluster {cluster}": colour
+                for cluster, colour in cluster_colours[value].items()
+            } | {"unclustered": "lightgrey"}
+            for value in values
+        }
+    else:
+        # one colour per ion across every subplot: px would otherwise number
+        # the ions ion_colors does not name afresh in each subplot, in
+        # whatever order they turn up there
+        colour_key = {
+            value: np.where(df["cluster_id"] != -1, df["ion"].astype(str), "unclustered")
+            for value, df in frames.items()
+        }
+        keys = sorted(set(np.concatenate(list(colour_key.values()))) - {"unclustered"})
+        fallback = iter(px.colors.qualitative.Plotly * (len(keys) // 10 + 1))
+        colours = {
+            key: (ion_colors or {}).get(key) or next(fallback) for key in keys
+        }
+        colours["unclustered"] = "lightgrey"
+        panel_colours = dict.fromkeys(values, colours)
+    legend_title = "cluster" if by_cluster else "ion"
 
     specs = [
         [{"type": "scene"} if row * n_cols + col < len(values) else None
@@ -1259,17 +1414,30 @@ def _clusters_in_linked_subplots(
         df = _with_cluster_label(frames[value].assign(colour=colour_key[value]))
 
         if len(df):
+            if by_cluster:
+                # the colour is the cluster, already the tooltip's heading
+                hover_data = {
+                    **hover_columns(df, hover, skip=("cluster",)), "colour": False
+                }
+            else:
+                hover_data = hover_columns(df, hover, skip=("cluster", "ion"))
+
             panel = px.scatter_3d(
                 df, x="x", y="y", z="z", color="colour",
-                color_discrete_map=colours,
-                category_orders={"colour": list(colours)},
-                labels={"colour": "ion"},
+                color_discrete_map=panel_colours[value],
+                category_orders={"colour": list(panel_colours[value])},
+                labels={"colour": legend_title},
                 hover_name="cluster",
-                hover_data=hover_columns(df, hover, skip=("cluster", "ion")),
+                hover_data=hover_data,
             )
             for trace in panel.data:
-                trace.showlegend = trace.name not in in_legend
-                in_legend.add(trace.name)
+                if by_cluster:
+                    # each subplot's clusters listed under its own title
+                    trace.legendgroup = titles[value]
+                    trace.legendgrouptitle.text = titles[value]
+                else:
+                    trace.showlegend = trace.name not in in_legend
+                    in_legend.add(trace.name)
                 fig.add_trace(trace, row=row + 1, col=col + 1)
 
         fig.update_scenes(box, row=row + 1, col=col + 1)
@@ -1279,12 +1447,15 @@ def _clusters_in_linked_subplots(
     figsize = figsize or (330 * n_cols + 120, 330 * n_rows + 90)
     fig.update_layout(
         title=title,
-        legend_title_text="ion",
+        legend_title_text=legend_title,
         template="simple_white",
         width=figsize[0],
         height=figsize[1],
         margin=dict(l=10, r=10, t=80, b=10),
     )
+    if by_cluster:
+        # a click hides that one cluster, not every cluster of its subplot
+        fig.update_layout(legend_groupclick="toggleitem")
 
     return fig
 

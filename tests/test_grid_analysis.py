@@ -10,6 +10,7 @@ Synthetic data only, so the file is fast and needs no external datasets.
 """
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 import pytest
 
 import posgenpy as pgp
@@ -547,7 +548,7 @@ def test_cluster_evolution_view_has_one_legend_entry_per_swept_value(grid, summa
 
     spread = pgp.compare_selected_clusters_across_param(
         dmax_axis, "dmax", chosen_value=0.4, selected_clusters=[biggest],
-        spread=True, ion_colors={"Cu": "#b87333"},
+        spread=True, ion_colors={"Cu": "#b87333"}, color_by="ion",
     )
     # one 3D subplot per value, titled by it, all framing the same box
     assert [a.text for a in spread.layout.annotations] == ["dmax = 0.4", "dmax = 0.6"]
@@ -595,6 +596,123 @@ def test_cluster_evolution_view_draws_each_value_at_its_own_n_min(grid, summary)
             dmax_axis, "dmax", chosen_value=0.4, selected_clusters=[biggest],
             n_min=everything, spread=True,
         )
+
+
+def dumbbell_clusters(entry):
+    """The dumbbell's cluster ids in one cell, biggest first."""
+    atoms = pd.read_parquet(entry["real_clustered_atoms_path"])
+    near = atoms.loc[
+        atoms["x"].between(8, 12.5) & atoms["y"].between(7, 11)
+        & atoms["z"].between(7, 11) & (atoms["cluster_id"] != -1)
+    ]
+    return near["cluster_id"].value_counts().index.tolist()
+
+
+def colours_by_subplot(figure):
+    return {
+        trace.legendgroup: {
+            t.name: t.marker.color for t in figure.data
+            if t.legendgroup == trace.legendgroup
+        }
+        for trace in figure.data
+    }
+
+
+def test_cluster_colours_follow_a_cluster_through_a_split(grid):
+    """Coloured by cluster - the default, even for one - the precipitate keeps
+    its colour at every Order though its id changes, and a piece that splits
+    off it gets a new one."""
+    order_axis = pgp.select_sweep(grid, dmax=0.4)
+    at = {e["order"]: e for e in order_axis}
+    first, second = pgp.CLUSTER_COLORS[:2]
+
+    (whole,) = dumbbell_clusters(at[3])
+    bigger, smaller = dumbbell_clusters(at[5])
+
+    spread = pgp.compare_selected_clusters_across_param(
+        order_axis, "order", chosen_value=3, selected_clusters=[whole],
+        spread=True,
+    )
+    colours = colours_by_subplot(spread)
+
+    # each subplot's clusters under its own title
+    assert set(colours) == {"Order = 3", "Order = 5", "Order = 8"}
+    assert colours["Order = 3"] == {f"Cluster {whole}": first}
+    # the bigger half keeps the colour; the other is a new cluster
+    assert colours["Order = 5"] == {
+        f"Cluster {bigger}": first, f"Cluster {smaller}": second
+    }
+    # every piece in its own colour
+    assert len(set(colours["Order = 8"].values())) == len(colours["Order = 8"])
+    assert spread.layout.legend.groupclick == "toggleitem"
+
+
+def test_cluster_colours_follow_a_merge_and_can_be_turned_off(grid):
+    order_axis = pgp.select_sweep(grid, dmax=0.4)
+    at = {e["order"]: e for e in order_axis}
+    first, second = pgp.CLUSTER_COLORS[:2]
+
+    (whole,) = dumbbell_clusters(at[3])
+    halves = dumbbell_clusters(at[5])
+
+    spread = pgp.compare_selected_clusters_across_param(
+        order_axis, "order", chosen_value=5, selected_clusters=halves,
+        spread=True,
+    )
+    colours = colours_by_subplot(spread)
+
+    assert colours["Order = 5"] == {
+        f"Cluster {halves[0]}": first, f"Cluster {halves[1]}": second
+    }
+    # merged back into one at Order 3, in the colour of the half it holds most of
+    assert colours["Order = 3"] == {f"Cluster {whole}": first}
+
+    by_ion = pgp.compare_selected_clusters_across_param(
+        order_axis, "order", chosen_value=5, selected_clusters=halves,
+        spread=True, color_by="ion",
+    )
+    assert {t.name for t in by_ion.data} <= set(CORE_IONS)
+
+    with pytest.warns(UserWarning, match="ignored with spread=False"):
+        pgp.compare_selected_clusters_across_param(
+            order_axis, "order", chosen_value=5, selected_clusters=halves,
+            color_by="ion",
+        )
+
+
+def test_show_clusters_colours_by_cluster_when_several_are_asked_for(monkeypatch):
+    shown = []
+    monkeypatch.setattr(go.Figure, "show", lambda self, *a, **k: shown.append(self))
+
+    rng = np.random.default_rng(0)
+    atoms = pd.DataFrame(
+        {
+            "x": rng.normal(size=60), "y": rng.normal(size=60),
+            "z": rng.normal(size=60) * 5,
+            "ion": ["Cu", "Ni"] * 30,
+            "cluster_id": np.repeat([3, 7, 9], 20),
+        }
+    )
+
+    # in the order asked for, one colour each
+    pgp.show_clusters_in_pos(atoms, [7, 3])
+    assert [(t.name, t.marker.color) for t in shown[-1].data] == [
+        ("Cluster 7", pgp.CLUSTER_COLORS[0]), ("Cluster 3", pgp.CLUSTER_COLORS[1])
+    ]
+    # the same length of nm on every axis, however long one of them is
+    assert shown[-1].layout.scene.aspectmode == "data"
+
+    # one cluster, or asked for: by ion
+    pgp.show_clusters_in_pos(atoms, [7])
+    assert sorted(t.name for t in shown[-1].data) == ["Cu", "Ni"]
+
+    pgp.show_clusters_in_pos(
+        atoms, [7, 3], color_by="ion", ion_colors={"Cu": "#b87333"}
+    )
+    assert {t.marker.color for t in shown[-1].data if t.name == "Cu"} == {"#b87333"}
+
+    with pytest.raises(ValueError, match="color_by"):
+        pgp.show_clusters_in_pos(atoms, [7, 3], color_by="size")
 
 
 def test_size_distribution_marks_each_values_n_min(grid):

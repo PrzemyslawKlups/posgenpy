@@ -72,6 +72,7 @@ from .viz import (
     hover_columns,
     RUN_TYPE_COLORS,
     EDGE_CLUSTER_COLORS,
+    CLUSTER_COLORS,
     DEFAULT_HOVER_COLUMNS,
     DEFAULT_GRID_HOVER_COLUMNS,
 )
@@ -143,6 +144,7 @@ __all__ = [
     "hover_columns",
     "RUN_TYPE_COLORS",
     "EDGE_CLUSTER_COLORS",
+    "CLUSTER_COLORS",
     "DEFAULT_HOVER_COLUMNS",
     "DEFAULT_GRID_HOVER_COLUMNS",
     "generate_synthetic_pos",

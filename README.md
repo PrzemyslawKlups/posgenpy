@@ -246,7 +246,9 @@ signature and 3-tuple return.
   ridgelines over both grid axes at once), `plot_grid_heatmap`,
   `plot_split_tracking`, `plot_cluster_alpha_shapes` (see-through cluster
   surfaces, edge clusters apart) and 3D visualisation of selected clusters -
-  one at a time, or across a whole swept axis. Every plot's tooltip leads with
+  one at a time, or across a whole swept axis, coloured by ion or one colour
+  per cluster from `CLUSTER_COLORS` (`color_by`; by cluster across a swept
+  axis, where each keeps its colour at every value). Every plot's tooltip leads with
   the cluster's `cluster_id`, so a cluster picked out of a size distribution
   can be typed straight into `show_clusters_in_pos`; tooltips otherwise show
   `DEFAULT_HOVER_COLUMNS` rather than every column a stats table carries
