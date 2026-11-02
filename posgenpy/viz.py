@@ -58,8 +58,8 @@ DEFAULT_HOVER_COLUMNS = [
 # ...and the same idea for a heatmap cell, whose "row" is one grid cell
 DEFAULT_GRID_HOVER_COLUMNS = [
     "optimal_n_min", "n_real_clusters", "n_random_clusters",
-    "true_positive_ratio", "n_min_reached", "n_min_status",
-    "true_positive_ratio_atoms", "percolation_verdict", "giant_fraction",
+    "estimated_precision", "n_min_reached", "n_min_status",
+    "estimated_precision_atoms", "percolation_verdict", "giant_fraction",
     "n_clusters_all", "max_cluster_size",
     "min_cluster_distance", "min_cluster_distance_norm",
     "n_clusters_from", "n_clusters_to", "n_split", "n_new_from_splits",
@@ -360,8 +360,8 @@ def plot_grid_heatmap(
     balanced on a knife edge.
 
     Every cell's tooltip carries the rest of its row, so the n_min, the real and
-    random cluster counts and the ratio can all be read off one cell without
-    replotting.
+    random cluster counts and the estimated precision can all be read off one
+    cell without replotting.
 
     Parameters
     ----------
@@ -369,7 +369,7 @@ def plot_grid_heatmap(
         `summarise_grid` output (or anything with order/dmax and `value`).
     value : str
         Column to colour by, e.g. "optimal_n_min", "n_real_clusters",
-        "true_positive_ratio".
+        "estimated_precision".
     colorscale : str
         Any plotly colour scale. Use a **single-hue sequential** one
         ("Blues", "Purples", "Greens", "Oranges", "Teal") for a magnitude, and
@@ -385,7 +385,7 @@ def plot_grid_heatmap(
         Format for the number printed in each cell, e.g. ".2f". Defaults to
         integers for integer columns and 2 decimals otherwise.
     mask_unreached : bool
-        Leave cells that never reached the confidence threshold blank. They are
+        Leave cells that never reached the precision threshold blank. They are
         reported at the largest n_min tried, which is not a result but a
         did-not-finish - plotted, it is an extreme value that flattens the
         colour scale over every cell that did work. Their numbers are still in
@@ -393,7 +393,7 @@ def plot_grid_heatmap(
     hover : list, optional
         Columns in the tooltip. Defaults to the plotted value plus whichever
         of `DEFAULT_GRID_HOVER_COLUMNS` the frame has - the n_min, the counts
-        and the ratio - rather than every column it happens to carry. Pass
+        and the precision - rather than every column it happens to carry. Pass
         `"all"` for everything, or a list of your own.
     """
 

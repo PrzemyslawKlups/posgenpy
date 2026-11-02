@@ -21,8 +21,8 @@ authors:
 - family-names: "Moody"
   given-names: "Michael P."
 title: "PosgenPy"
-version: 2.0.0
-date-released: 2026-10-23
+version: 3.0.0
+date-released: 2026-11-02
 url: "https://github.com/PrzemyslawKlups/posgenpy"
 preferred-citation:
   type: article

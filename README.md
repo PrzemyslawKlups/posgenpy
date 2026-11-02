@@ -160,13 +160,47 @@ Several behaviours are switchable, so a run can be reproduced either way:
 `<unranged foroutput="True" forstats="True"/>`: posgen evidently did not parse
 that capitalised `"True"` as true, and `False` is what reproduces its output.
 
+## What the n_min threshold measures
+
+`optimise_n_min` picks, for each swept value, the smallest `n_min` at which
+
+```
+(N_real − ⟨N_rand⟩) / N_real  ≥  precision_threshold        (0.95 by default)
+```
+
+where `N_real` is the number of clusters of at least `n_min` atoms in the tip
+and `⟨N_rand⟩` the mean number in the randomised controls. `⟨N_rand⟩` estimates
+how many of the tip's clusters chance alone would produce — the false
+positives — so the ratio is TP / (TP + FP): the **estimated precision**, or
+1 − the false discovery rate. It is *not* a true-positive rate (recall,
+TP / (TP + FN)): that would need the genuine clusters the search missed, which
+the control says nothing about. Raising `n_min` buys precision at the cost of
+recall — small genuine clusters go with the chance ones — which is why the
+search takes the smallest `n_min` that is precise enough. Being an estimate it
+is not confined to [0, 1]: it goes negative where the control finds more
+clusters than the tip.
+
+Before 3.0.0 this was called the "true-positive ratio". The rename is breaking:
+
+| before 3.0.0 | from 3.0.0 |
+|---|---|
+| column `true_positive_ratio` | `estimated_precision` |
+| column `true_positive_ratio_atoms` | `estimated_precision_atoms` |
+| `confidence_threshold=` | `precision_threshold=` — the old keyword still works, with a `DeprecationWarning` |
+| printed `TPR: 0.96` | `precision: 0.96` |
+
+Nothing that is computed changed, and sweep folders written by earlier versions
+read back as they are: these columns are derived from the saved size tables on
+the fly, never stored. The code under `legacy/` is untouched and still prints
+`TPR`.
+
 ## When the randomised control percolates
 
-`optimise_n_min` compares **counts of clusters** — the true-positive ratio is
-`(N_real − ⟨N_rand⟩) / N_real`. A percolating network contributes exactly
-**one** cluster no matter how much solute it swallowed. So at a `dmax` large
-enough that the solute network of the *randomised* tip spans the cell,
-`⟨N_rand⟩` collapses towards 1, the ratio sails past the threshold, and a
+`optimise_n_min` compares **counts of clusters** — the estimated precision it
+thresholds is `(N_real − ⟨N_rand⟩) / N_real`. A percolating network contributes
+exactly **one** cluster no matter how much solute it swallowed. So at a `dmax`
+large enough that the solute network of the *randomised* tip spans the cell,
+`⟨N_rand⟩` collapses towards 1, the estimate sails past the threshold, and a
 confident-looking `n_min` comes back from a parameter region with no
 discriminating power at all. On one MD dump it made a strictly more permissive
 order look strictly more discriminating — orders 1–3 reporting a *lower* n_min
@@ -201,7 +235,7 @@ three exits and the returned integer used to be the same shape for all three:
 | `"range_exhausted"` | no n_min in `n_min_values` got there |
 
 Only a `"reached"` row carries an `n_min`; the other two are `NaN`. It also
-carries `true_positive_ratio_atoms` — the same real-vs-control comparison
+carries `estimated_precision_atoms` — the same real-vs-control comparison
 counted in **atoms** rather than clusters, over every cluster in the saved
 tables. A percolating control cannot hide inside it as a single cluster, so
 where it sits at or below zero the control clusters as much solute as the tip
@@ -213,12 +247,12 @@ Both failure modes reach a caller that is not reading either report:
 `verbose=False` is exactly how `summarise_grid` calls it, so a printed message
 was no message at all); `summarise_grid` takes `n_min_reached` from the status
 instead of re-deriving it from the returned integer, and adds `n_min_status`,
-`percolation_verdict`, `giant_fraction` and `true_positive_ratio_atoms`
+`percolation_verdict`, `giant_fraction` and `estimated_precision_atoms`
 columns; and the two real-vs-random sweep plots shade the swept values whose
 control has percolated.
 
 Nothing about the cluster search itself changed, and `optimise_n_min` keeps its
-signature and 3-tuple return.
+3-tuple return.
 
 ## Modules
 
@@ -493,8 +527,14 @@ point if `order` points *including itself* (among core species) lie within
 `dmax`. Same number as in a posgen run's `_order_N` filename.
 
 **n_min** - the minimum allowable cluster size; swept as a diagnostic axis and
-then auto-selected via a real-vs-random cluster-count threshold (95% "true
-positive ratio" by default).
+then auto-selected via a real-vs-random cluster-count threshold (an estimated
+precision of 95% by default).
+
+**estimated precision** - `(N_real − ⟨N_rand⟩) / N_real`, the fraction of
+detected clusters the randomised control does not account for: 1 − the false
+discovery rate. Not a true-positive rate (recall) - see *What the n_min
+threshold measures*. `estimated_precision_atoms` is the same comparison
+counted in atoms.
 
 **relabelling / randomisation** - shuffling the pos file's `mc` column and
 re-clustering, to build a random-cluster-count baseline for the same
