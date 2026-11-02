@@ -229,10 +229,13 @@ def _load_sweep_sizes(
 def _atom_ratio(d):
     """`(A_real - <A_rand>) / A_real` over every cluster in the saved tables.
 
+    The estimated precision weighted by atoms: the fraction of the solute the
+    search put into clusters that the randomised control does not account for.
+
     Atoms, not clusters: a percolating control contributes exactly one cluster
-    no matter how much solute it swallowed, so the count-based ratio can look
-    healthy - can be *pushed past the threshold by the percolation itself* -
-    where this one is at or below zero.
+    no matter how much solute it swallowed, so the count-based estimate can
+    look healthy - can be *pushed past the threshold by the percolation
+    itself* - where this one is at or below zero.
     """
 
     atoms_real = float(d["real_sizes"].sum())
@@ -248,11 +251,32 @@ N_MIN_STATUSES = ("reached", "unreachable", "range_exhausted")
 _N_MIN_REPORT_COLUMNS = [
     "swept_value", "run_name", "n_min", "status",
     "n_real_clusters", "n_random_clusters",
-    "true_positive_ratio", "true_positive_ratio_atoms", "n_min_returned",
+    "estimated_precision", "estimated_precision_atoms", "n_min_returned",
 ]
 
 
-def _n_min_rows(sweep_manifest, data, n_min_values, confidence_threshold) -> list:
+def _resolve_precision_threshold(precision_threshold, confidence_threshold):
+    """Accept either `precision_threshold` or the deprecated `confidence_threshold`.
+
+    The number thresholded is `(N_real - <N_rand>) / N_real`, an estimate of the
+    search's precision. "Confidence" read as a statistical confidence level,
+    which it never was. The old keyword still wins when given, so existing
+    notebooks keep producing the numbers they produced before.
+    """
+    if confidence_threshold is None:
+        return precision_threshold
+
+    warnings.warn(
+        "confidence_threshold is deprecated; use precision_threshold instead. "
+        "It is the same number: a threshold on the estimated precision "
+        "(N_real - <N_rand>) / N_real.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+    return confidence_threshold
+
+
+def _n_min_rows(sweep_manifest, data, n_min_values, precision_threshold) -> list:
     """The n_min search itself, over sizes already in memory.
 
     One row per swept value. The search has three exits and this is the only
@@ -260,7 +284,7 @@ def _n_min_rows(sweep_manifest, data, n_min_values, confidence_threshold) -> lis
 
     | status | |
     |---|---|
-    | `"reached"` | the true-positive ratio crossed `confidence_threshold` |
+    | `"reached"` | the estimated precision crossed `precision_threshold` |
     | `"unreachable"` | the real clusters ran out first, so no n_min in *any* range can get there |
     | `"range_exhausted"` | no n_min in `n_min_values` got there |
 
@@ -296,9 +320,11 @@ def _n_min_rows(sweep_manifest, data, n_min_values, confidence_threshold) -> lis
                 status, n_min = "unreachable", int(candidate)
                 break
 
-            local_tpr = (local_real_clusters - local_random_clusters) / local_real_clusters
+            local_precision = (
+                (local_real_clusters - local_random_clusters) / local_real_clusters
+            )
 
-            if local_tpr >= confidence_threshold:
+            if local_precision >= precision_threshold:
                 status, n_min = "reached", int(candidate)
                 break
 
@@ -310,12 +336,12 @@ def _n_min_rows(sweep_manifest, data, n_min_values, confidence_threshold) -> lis
                 "status": status,
                 "n_real_clusters": local_real_clusters,
                 "n_random_clusters": local_random_clusters,
-                "true_positive_ratio": (
+                "estimated_precision": (
                     (local_real_clusters - local_random_clusters) / local_real_clusters
                     if local_real_clusters
                     else np.nan
                 ),
-                "true_positive_ratio_atoms": _atom_ratio(d),
+                "estimated_precision_atoms": _atom_ratio(d),
                 "n_min_returned": int(n_min),
             }
         )
@@ -323,7 +349,7 @@ def _n_min_rows(sweep_manifest, data, n_min_values, confidence_threshold) -> lis
     return rows
 
 
-def _warn_about_n_min_statuses(rows, confidence_threshold):
+def _warn_about_n_min_statuses(rows, precision_threshold):
     """Surface the two failure exits even when nothing is printing.
 
     `optimise_n_min`'s `verbose=False` is exactly how `summarise_grid` calls it,
@@ -338,7 +364,7 @@ def _warn_about_n_min_statuses(rows, confidence_threshold):
         f"{r['run_name'] or r['swept_value']}: {r['status']}" for r in failed
     )
     warnings.warn(
-        f"the true-positive ratio never reached {confidence_threshold} for "
+        f"the estimated precision never reached {precision_threshold} for "
         f"{len(failed)} of {len(rows)} swept values ({detail}). The n_min "
         "reported for those is where the search stopped, not an answer - see "
         "n_min_report() for the status and percolation_report() for the usual "
@@ -350,11 +376,12 @@ def _warn_about_n_min_statuses(rows, confidence_threshold):
 def n_min_report(
     sweep_manifest: list,
     n_min_values=np.arange(1, 500, 1),
-    confidence_threshold: float = 0.95,
+    precision_threshold: float = 0.95,
     size_metric: str = "core",
     exclude_ions: list = None,
     core_species: list = None,
     warn: bool = True,
+    confidence_threshold: float = None,
 ) -> pd.DataFrame:
     """`optimise_n_min` with its reasoning shown: one row per swept value.
 
@@ -366,21 +393,26 @@ def n_min_report(
 
     | column | |
     |---|---|
-    | `n_min` | smallest n_min reaching `confidence_threshold`; NaN if it never did |
+    | `n_min` | smallest n_min reaching `precision_threshold`; NaN if it never did |
     | `status` | which of the three exits above was taken |
     | `n_real_clusters`, `n_random_clusters` | counts where the search stopped |
-    | `true_positive_ratio` | `(N_real - <N_rand>) / N_real` there |
-    | `true_positive_ratio_atoms` | the same comparison on *atoms* - `(A_real - <A_rand>) / A_real` over every cluster in the saved tables, no n_min applied. At or below zero the control clusters as much solute as the tip does and the swept value has **no discriminating power**, whatever the count-based ratio says |
+    | `estimated_precision` | `(N_real - <N_rand>) / N_real` there - see `optimise_n_min` for why this is a precision and not a true-positive rate |
+    | `estimated_precision_atoms` | the same comparison on *atoms* - `(A_real - <A_rand>) / A_real` over every cluster in the saved tables, no n_min applied. At or below zero the control clusters as much solute as the tip does and the swept value has **no discriminating power**, whatever the count-based estimate says |
     | `n_min_returned` | what the legacy `optimise_n_min` 3-tuple reports here |
 
     Raises a warning for every non-`"reached"` row unless `warn=False`.
+    `confidence_threshold` is the deprecated spelling of `precision_threshold`.
     """
 
+    precision_threshold = _resolve_precision_threshold(
+        precision_threshold, confidence_threshold
+    )
+
     data = _load_sweep_sizes(sweep_manifest, size_metric, exclude_ions, core_species)
-    rows = _n_min_rows(sweep_manifest, data, n_min_values, confidence_threshold)
+    rows = _n_min_rows(sweep_manifest, data, n_min_values, precision_threshold)
 
     if warn:
-        _warn_about_n_min_statuses(rows, confidence_threshold)
+        _warn_about_n_min_statuses(rows, precision_threshold)
 
     return pd.DataFrame(rows, columns=_N_MIN_REPORT_COLUMNS)
 
@@ -388,16 +420,33 @@ def n_min_report(
 def optimise_n_min(
     sweep_manifest: list,
     n_min_values=np.arange(1, 500, 1),
-    confidence_threshold: float = 0.95,
+    precision_threshold: float = 0.95,
     size_metric: str = "core",
     exclude_ions: list = None,
     core_species: list = None,
     verbose: bool = True,
+    confidence_threshold: float = None,
 ) -> tuple:
     """
-    For each swept value, find the smallest n_min at which the true-positive
-    ratio (real clusters - mean random clusters) / real clusters reaches
-    confidence_threshold, using each run's saved per-cluster sizes.
+    For each swept value, find the smallest n_min at which the estimated
+    precision (real clusters - mean random clusters) / real clusters reaches
+    precision_threshold, using each run's saved per-cluster sizes.
+
+    **It is a precision, not a true-positive rate.** `<N_rand>`, the mean
+    cluster count of the randomised controls, estimates how many of the
+    `N_real` clusters found in the tip chance alone would produce - the false
+    positives. `(N_real - <N_rand>) / N_real` is therefore TP / (TP + FP):
+    the fraction of reported clusters that are real, or 1 - the false
+    discovery rate. A true-positive rate (recall), TP / (TP + FN), would need
+    the number of genuine clusters the search *missed*, which the control
+    says nothing about. Raising n_min buys precision at the cost of recall -
+    small genuine clusters go with the chance ones - which is why the search
+    takes the smallest n_min that is precise enough. Being an estimate it is
+    not confined to [0, 1]: it goes negative where the control finds more
+    clusters than the tip.
+
+    `confidence_threshold` is the deprecated spelling of `precision_threshold`,
+    still accepted with a `DeprecationWarning`.
 
     `size_metric` selects what n_min is compared against - "core" (posgen's
     `Cluster Size(core)`, core+border atoms), "total" (every atom), or
@@ -419,21 +468,25 @@ def optimise_n_min(
 
     vprint = print if verbose else lambda *args, **kwargs: None
 
+    precision_threshold = _resolve_precision_threshold(
+        precision_threshold, confidence_threshold
+    )
+
     data = _load_sweep_sizes(sweep_manifest, size_metric, exclude_ions, core_species)
-    rows = _n_min_rows(sweep_manifest, data, n_min_values, confidence_threshold)
+    rows = _n_min_rows(sweep_manifest, data, n_min_values, precision_threshold)
 
     for row in rows:
         if row["status"] == "unreachable":
-            vprint(f"TPR cannot be reached for {row['run_name']}")
+            vprint(f"precision threshold cannot be reached for {row['run_name']}")
         elif row["status"] == "reached":
             vprint(
                 f"{row['run_name']} | Nmin:{row['n_min_returned']} | "
-                f"TPR: {round(row['true_positive_ratio'], 2)}"
+                f"precision: {round(row['estimated_precision'], 2)}"
                 f"\t(real:{row['n_real_clusters']} | "
                 f"random:{round(row['n_random_clusters'])})"
             )
 
-    _warn_about_n_min_statuses(rows, confidence_threshold)
+    _warn_about_n_min_statuses(rows, precision_threshold)
 
     return (
         [row["n_min_returned"] for row in rows],
@@ -538,7 +591,7 @@ def percolation_report(
     `optimise_n_min` compares *counts of clusters*, and a percolating network
     contributes exactly **one** cluster however much solute it swallowed. Where
     the control's solute network spans the tip, the comparison silently stops
-    measuring anything: `<N_rand>` collapses towards 1, the true-positive ratio
+    measuring anything: `<N_rand>` collapses towards 1, the estimated precision
     sails past the threshold, and a confident-looking n_min comes back from a
     parameter region with no discriminating power at all. The usual cause is a
     `dmax` large enough that the mean solute-solute degree in the *randomised*
@@ -586,7 +639,7 @@ def percolation_report(
                 f"the randomised control's largest cluster spans a large "
                 f"fraction of the tip's solute at {len(flagged)} of {len(rows)} "
                 f"swept values ({detail}). Cluster *counts* there - including "
-                "the true-positive ratio optimise_n_min thresholds - are not "
+                "the estimated precision optimise_n_min thresholds - are not "
                 "meaningful; lower dmax or raise the order.",
                 stacklevel=2,
             )
@@ -645,15 +698,20 @@ def plot_real_cluster_ratio_across_swept_param(
     core_species: list = None,
     flag_percolation: bool = True,
 ):
-    """Plot (N_real - N_random)/N_real vs swept parameter, for each n_min.
+    """Plot the estimated precision (N_real - N_random)/N_real vs swept
+    parameter, for each n_min.
+
+    `threshold` is the precision the red line is drawn at - pass the same
+    `precision_threshold` given to `optimise_n_min`.
 
     `size_metric` defaults to "core" - posgen's `Cluster Size(core)` - so the
-    curves match the equivalent posgen-era graph. See `optimise_n_min`.
+    curves match the equivalent posgen-era graph. See `optimise_n_min`, and
+    there for why this is a precision rather than a true-positive rate.
 
     `flag_percolation` shades the swept values where `percolation_report` says
     the randomised control's solute network has percolated. The curve is still
-    drawn there, because it is still what the arithmetic gives - but a ratio
-    computed against a control that is one tip-spanning cluster is not a
+    drawn there, because it is still what the arithmetic gives - but a precision
+    estimated against a control that is one tip-spanning cluster is not a
     measurement, and it is otherwise indistinguishable from a good one.
     """
 
@@ -699,7 +757,7 @@ def plot_real_cluster_ratio_across_swept_param(
     )
     ax.legend(bbox_to_anchor=(1.05, 1))
     ax.set_ylim(top=1.1)
-    ax.set_title("Fraction of Real Clusters")
+    ax.set_title("Estimated Precision (Fraction of Real Clusters)")
 
     return fig, ax
 
@@ -768,7 +826,7 @@ def plot_atom_ratio_across_swept_param(
     core_species: list = None,
     flag_percolation: bool = True,
 ):
-    """Plot the atom-based true-positive ratio vs swept parameter.
+    """Plot the atom-weighted estimated precision vs swept parameter.
 
     `(A_real - <A_rand>) / A_real`, where `A` is the solute the search put into
     clusters. The companion to `plot_real_cluster_ratio_across_swept_param`,

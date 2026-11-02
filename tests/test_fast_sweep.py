@@ -790,7 +790,7 @@ def test_summarise_grid_covers_every_cell(grid):
     }
     assert {
         "optimal_n_min", "n_real_clusters", "n_random_clusters",
-        "true_positive_ratio", "n_min_reached",
+        "estimated_precision", "n_min_reached",
     } <= set(summary.columns)
 
     # the per-cell answer must be the one the 1D path gives for that cell
@@ -812,7 +812,7 @@ def test_grid_heatmap_carries_every_cell_column(grid):
 
     assert figure.data[0].z.shape == (2, 2)
     hover = figure.data[0].customdata[0][0]
-    assert "n_real_clusters" in hover and "true_positive_ratio" in hover
+    assert "n_real_clusters" in hover and "estimated_precision" in hover
 
     with pytest.raises(ValueError, match="not a column"):
         pgp.plot_grid_heatmap(summary, value="nope")
@@ -977,6 +977,43 @@ def test_n_min_report_is_the_same_search_optimise_n_min_runs(grid):
     assert list(report["n_random_clusters"]) == random
 
 
+def test_deprecated_confidence_threshold_still_means_the_old_thing(
+    percolating_sweep_with_clusters,
+):
+    """`confidence_threshold` became `precision_threshold`: what it thresholds,
+    `(N_real - <N_rand>) / N_real`, is an estimated precision, not a
+    confidence level.
+
+    Kept working (with a warning) so existing notebooks keep producing the
+    numbers they produced before. 0.8 is a threshold this sweep answers
+    differently from the 0.95 default, so the old keyword is seen to land
+    rather than being silently dropped.
+    """
+    sweep = percolating_sweep_with_clusters
+    search = dict(n_min_values=range(1, 400), warn=False)
+
+    with pytest.warns(DeprecationWarning, match="precision_threshold"):
+        via_old = pgp.n_min_report(sweep, confidence_threshold=0.8, **search)
+    via_new = pgp.n_min_report(sweep, precision_threshold=0.8, **search)
+    default = pgp.n_min_report(sweep, **search)
+
+    pd.testing.assert_frame_equal(via_old, via_new)
+    assert list(via_old["n_min_returned"]) != list(default["n_min_returned"])
+
+    with pytest.warns(DeprecationWarning, match="precision_threshold"):
+        n_min, _, _ = pgp.optimise_n_min(
+            sweep, n_min_values=range(1, 400), confidence_threshold=0.8,
+            verbose=False,
+        )
+    assert n_min == list(via_new["n_min_returned"])
+
+    with pytest.warns(DeprecationWarning, match="precision_threshold"):
+        summary = summarise_grid(
+            sweep, confidence_threshold=0.8, cluster_metrics=False, **search
+        )
+    assert list(summary["optimal_n_min"]) == list(via_new["n_min_returned"])
+
+
 def test_summarise_grid_does_not_report_an_unreachable_cell_as_reached(
     percolating_sweep,
 ):
@@ -1004,7 +1041,7 @@ def test_summarise_grid_carries_the_percolation_verdict(percolating_sweep, grid)
     with pytest.warns(UserWarning):
         summary = summarise_grid(percolating_sweep, n_min_values=range(1, 400))
 
-    assert {"percolation_verdict", "giant_fraction", "true_positive_ratio_atoms"} <= set(
+    assert {"percolation_verdict", "giant_fraction", "estimated_precision_atoms"} <= set(
         summary.columns
     )
     assert "percolating" in set(summary["percolation_verdict"])
@@ -1060,7 +1097,7 @@ def test_the_atom_ratio_sees_what_the_cluster_counts_cannot(
     """The tell that the physics is fine and the count-based metric is not.
 
     A percolating control contributes exactly one cluster however much solute
-    it swallowed, so `true_positive_ratio` can sit at or above the threshold
+    it swallowed, so `estimated_precision` can sit at or above the threshold
     where there is no signal at all. Counted in atoms the same comparison
     collapses to zero across the percolating orders and only becomes positive
     once the control is sub-critical and the planted clusters are what is left.
@@ -1077,11 +1114,11 @@ def test_the_atom_ratio_sees_what_the_cluster_counts_cannot(
 
     percolating = merged.loc[merged["verdict"] == "percolating"]
     assert not percolating.empty
-    assert (percolating["true_positive_ratio_atoms"] <= 0.01).all()
+    assert (percolating["estimated_precision_atoms"] <= 0.01).all()
 
     at_the_top = merged.iloc[-1]
     assert at_the_top["verdict"] == "ok"
-    assert at_the_top["true_positive_ratio_atoms"] > 0.1
+    assert at_the_top["estimated_precision_atoms"] > 0.1
 
 
 def test_the_sweep_plots_shade_the_percolating_swept_values(percolating_sweep):

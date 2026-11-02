@@ -94,6 +94,7 @@ from .sweep import (
     _load_sweep_sizes,
     _n_min_rows,
     _percolation_rows,
+    _resolve_precision_threshold,
     _warn_about_n_min_statuses,
 )
 
@@ -1090,7 +1091,7 @@ def select_sweep(manifest: list, order=None, dmax=None) -> list:
 def summarise_grid(
     manifest: list,
     n_min_values=range(1, 200),
-    confidence_threshold: float = 0.95,
+    precision_threshold: float = 0.95,
     size_metric: str = "core",
     exclude_ions: list = None,
     core_species: list = None,
@@ -1099,6 +1100,7 @@ def summarise_grid(
     warn_fraction: float = 0.10,
     fail_fraction: float = 0.30,
     warn: bool = True,
+    confidence_threshold: float = None,
 ) -> pd.DataFrame:
     """One row per (order, dmax) cell: the numbers you pick a parameter pair on.
 
@@ -1113,21 +1115,21 @@ def summarise_grid(
 
     | column | |
     |---|---|
-    | `optimal_n_min` | smallest n_min whose true-positive ratio reaches `confidence_threshold` |
+    | `optimal_n_min` | smallest n_min whose estimated precision reaches `precision_threshold` |
     | `n_real_clusters`, `n_random_clusters` | cluster counts at that n_min |
-    | `true_positive_ratio` | the ratio it reached |
+    | `estimated_precision` | the precision it reached, `(N_real - <N_rand>) / N_real` - see `sweep.optimise_n_min` for why it is not a true-positive rate |
     | `n_min_reached` | False where the threshold was never crossed - the cell is then reported at the n_min where the search stopped, and should not be chosen |
     | `n_min_status` | *why* it stopped: `"reached"`, `"unreachable"` (real clusters ran out first) or `"range_exhausted"` (`n_min_values` ran out) |
 
     Two further columns say whether the comparison behind those numbers still
     means anything (`sweep.percolation_report`, and `sweep.n_min_report` for the
-    atom-based ratio):
+    atom-weighted precision):
 
     | column | |
     |---|---|
     | `percolation_verdict` | `"ok"` / `"near-threshold"` / `"percolating"`. Where the randomised control's solute network spans the tip it contributes *one* cluster however much solute it ate, `n_random_clusters` collapses towards 1, and `optimal_n_min` is arithmetic on a broken control. **Never pick a cell that is not `"ok"`.** |
     | `giant_fraction` | the fraction of the tip's solute in that giant cluster, which is what the verdict cuts on |
-    | `true_positive_ratio_atoms` | the same real-vs-control comparison counted in *atoms*, where a percolating control cannot hide as one cluster. At or below zero the cell has no discriminating power |
+    | `estimated_precision_atoms` | the same real-vs-control comparison counted in *atoms*, where a percolating control cannot hide as one cluster. At or below zero the cell has no discriminating power |
 
     With `cluster_metrics` (the default) each cell's real clusters are read
     too, giving the shape of what those parameters actually found:
@@ -1143,10 +1145,16 @@ def summarise_grid(
     `optimal_n_min`, since the sub-threshold ones are exactly the noise the
     n_min was chosen to remove.
 
+    `confidence_threshold` is the deprecated spelling of `precision_threshold`,
+    still accepted with a `DeprecationWarning`.
+
     >>> summary = summarise_grid(grid)
     >>> summary.pivot(index="order", columns="dmax", values="optimal_n_min")
     """
 
+    precision_threshold = _resolve_precision_threshold(
+        precision_threshold, confidence_threshold
+    )
     n_min_values = list(n_min_values)
     rows = []
     n_min_rows = []
@@ -1157,7 +1165,7 @@ def summarise_grid(
         cell = dict(entry, swept_param="dmax", swept_value=entry["dmax"])
         sizes = _load_sweep_sizes([cell], size_metric, exclude_ions, core_species)
 
-        search = _n_min_rows([cell], sizes, n_min_values, confidence_threshold)[0]
+        search = _n_min_rows([cell], sizes, n_min_values, precision_threshold)[0]
         percolation = _percolation_rows(
             [cell], sizes, warn_fraction, fail_fraction
         )[0]
@@ -1171,13 +1179,13 @@ def summarise_grid(
             "optimal_n_min": optimal_n_min,
             "n_real_clusters": search["n_real_clusters"],
             "n_random_clusters": search["n_random_clusters"],
-            "true_positive_ratio": search["true_positive_ratio"],
+            "estimated_precision": search["estimated_precision"],
             # a fact from the search, not a guess from the number it returned:
             # a cell that ran out of real clusters also returns an n_min below
             # max(n_min_values), and used to be reported as a pass
             "n_min_reached": search["status"] == "reached",
             "n_min_status": search["status"],
-            "true_positive_ratio_atoms": search["true_positive_ratio_atoms"],
+            "estimated_precision_atoms": search["estimated_precision_atoms"],
             "percolation_verdict": percolation["verdict"],
             "giant_fraction": percolation["giant_fraction"],
         }
@@ -1194,7 +1202,7 @@ def summarise_grid(
         rows.append(row)
 
     if warn:
-        _warn_about_n_min_statuses(n_min_rows, confidence_threshold)
+        _warn_about_n_min_statuses(n_min_rows, precision_threshold)
         flagged = [r for r in rows if r["percolation_verdict"] != "ok"]
         if flagged:
             warnings.warn(
