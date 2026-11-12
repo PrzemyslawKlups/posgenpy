@@ -5,6 +5,7 @@ is now split across io.py, cluster.py, sweep.py, corrections.py, viz.py.
 """
 from .io import (
     read_pos_to_df,
+    read_apt_to_df,
     write_pos,
     write_apt,
     export_cluster_pos_files,
@@ -87,6 +88,7 @@ from .parity import (
 
 __all__ = [
     "read_pos_to_df",
+    "read_apt_to_df",
     "write_pos",
     "write_apt",
     "export_cluster_pos_files",

@@ -21,7 +21,7 @@ the cluster corrections.
 ```python
 import posgenpy as pgp
 
-pos_df = pgp.read_pos_to_df("mytip.pos")
+pos_df = pgp.read_pos_to_df("mytip.pos")   # or an AP Suite "mytip.apt"
 rrng_df = pgp.read_rrng("mytip.rrng")
 
 core_ions = ["Ni", "Mn", "Si"]

@@ -18,7 +18,8 @@ def read_apt(path):
     148-byte section headers each followed by llByteCount bytes of data -
     "Position" with six bound floats in between."""
 
-    raw = open(path, "rb").read()
+    with open(path, "rb") as f:
+        raw = f.read()
     header = np.frombuffer(raw, dtype=pgp.io._APT_FILE_HEADER, count=1)[0]
     offset = int(header["iHeaderSize"])
     sections = {}
