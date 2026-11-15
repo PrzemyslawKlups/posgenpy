@@ -1,4 +1,4 @@
-"""Reading .pos / .rrng files and labelling atoms with ion species.
+"""Reading .pos / .apt / .rrng files and labelling atoms with ion species.
 
 Pure-Python replacement for the .pos/.rrng handling previously split between
 ``preposgenpy.py`` and ``legacy/clustering_corrections.py``'s ``read_pos``/``read_rrng``.
@@ -14,26 +14,41 @@ import pandas as pd
 # Opening POS file
 
 
+def _pos_frame(xyz, mc):
+    """The DataFrame every reader returns: ionIdx (1-based), x, y, z, mc."""
+
+    # native-endian float32, whatever byte order the file used
+    xyz = np.asarray(xyz).astype(np.float32)
+    mc = np.asarray(mc).astype(np.float32)
+
+    return pd.DataFrame(
+        {
+            "ionIdx": np.arange(1, len(mc) + 1),
+            "x": xyz[:, 0],
+            "y": xyz[:, 1],
+            "z": xyz[:, 2],
+            "mc": mc,
+        }
+    )
+
+
 def read_pos_to_df(filename):
-    """Load a binary .pos file into a DataFrame with columns ionIdx, x, y, z, mc."""
+    """Load a .pos file into a DataFrame with columns ionIdx, x, y, z, mc.
+
+    A file ending in `.apt` (any case) is read as an AP Suite .apt file
+    instead - see `read_apt_to_df` - and comes back as the same frame, so
+    either can be passed here. The format is picked by the extension, not by
+    the file's first bytes: a .pos has no header, and "APT\\0" read as a .pos
+    float is a valid x coordinate (~13.02 nm).
+    """
+
+    if Path(filename).suffix.lower() == ".apt":
+        return read_apt_to_df(filename)
 
     data = np.fromfile(filename, dtype=">f4")
     data = data.reshape((-1, 4))
 
-    # convert to native-endian float32
-    data = data.astype(np.float32)
-
-    df = pd.DataFrame(
-        {
-            "ionIdx": np.arange(1, len(data) + 1),
-            "x": data[:, 0],
-            "y": data[:, 1],
-            "z": data[:, 2],
-            "mc": data[:, 3],
-        }
-    )
-
-    return df
+    return _pos_frame(data[:, :3], data[:, 3])
 
 
 def write_pos(pos_df, filename):
@@ -51,7 +66,7 @@ def write_pos(pos_df, filename):
 
 
 # ===========================================================================
-# Writing APT (AP Suite) files
+# Reading and writing APT (AP Suite) files
 
 # AP Suite 6 ".apt" layout, as read by NOMAD's ifes_apt_tc_data_modeling
 # (apt/apt6_headers.py, apt6_sections.py, apt6_reader.py): a 540-byte file
@@ -155,6 +170,126 @@ def write_apt(pos_df, filename):
         f.write(positions.tobytes())
         f.write(_apt_section("Mass", "Da", n_ions, 1, 148).tobytes())
         f.write(mass.tobytes())
+
+
+def _from_utf16(units):
+    """Decode a zero-padded UTF-16 header field - the inverse of `_utf16`."""
+
+    units = np.asarray(units, dtype="<u2")
+    zeros = np.flatnonzero(units == 0)
+    if len(zeros):
+        units = units[: zeros[0]]
+    return units.tobytes().decode("utf-16-le", errors="replace")
+
+
+def _apt_sections(f, filename, start, file_size):
+    """Walk an .apt file's sections: name -> (section header, data offset).
+
+    Each section is a header of `iHeaderSize` bytes (148, or more when it
+    carries extra fields - "Position" has its six bounds there) followed by
+    `llByteCount` bytes of data, and the next section starts right after.
+    """
+
+    sections = {}
+    offset = start
+
+    while offset < file_size:
+        if offset + _APT_SECTION_HEADER.itemsize > file_size:
+            raise ValueError(f"{filename} is truncated inside a section header")
+
+        f.seek(offset)
+        section = np.fromfile(f, dtype=_APT_SECTION_HEADER, count=1)[0]
+        if bytes(section["cSignature"]) != b"SEC":
+            raise ValueError(f"{filename} has no section header at byte {offset}")
+        header_size = int(section["iHeaderSize"])
+        if header_size < _APT_SECTION_HEADER.itemsize:
+            raise ValueError(
+                f"{filename} has a section header of {header_size} bytes at "
+                f"byte {offset}"
+            )
+
+        data_offset = offset + header_size
+        offset = data_offset + int(section["llByteCount"])
+        if offset > file_size:
+            raise ValueError(f"{filename} is truncated inside a section's data")
+
+        sections.setdefault(_from_utf16(section["wcSectionType"]), (section, data_offset))
+
+    return sections
+
+
+def _apt_float_section(f, filename, sections, name, values_per_ion, n_ions):
+    """One of the file's per-ion float sections, as an (n_ions, values_per_ion) array."""
+
+    if name not in sections:
+        raise ValueError(
+            f"{filename} has no {name!r} section (it has: {', '.join(sections)})"
+        )
+
+    section, data_offset = sections[name]
+    bits = int(section["iDataTypeSize"])
+    if (
+        section["eRecordDataType"] != 3
+        or bits not in (32, 64)
+        or section["iRecordSize"] != values_per_ion * bits // 8
+    ):
+        raise ValueError(
+            f"the {name!r} section of {filename} is not {values_per_ion} "
+            f"float(s) per ion"
+        )
+    if section["llRecordCount"] != n_ions:
+        raise ValueError(
+            f"the {name!r} section of {filename} has {section['llRecordCount']} "
+            f"records for {n_ions} ions"
+        )
+    if section["llByteCount"] < n_ions * section["iRecordSize"]:
+        raise ValueError(f"the {name!r} section of {filename} is short of data")
+
+    f.seek(data_offset)
+    data = np.fromfile(f, dtype=f"<f{bits // 8}", count=n_ions * values_per_ion)
+    return data.reshape(n_ions, values_per_ion)
+
+
+def read_apt_to_df(filename):
+    """Load an AP Suite .apt file into the frame `read_pos_to_df` returns.
+
+    An .apt holds one section per measured quantity - in an AP Suite 6
+    export: Voltage, Delta Pulse, pulse, erate, Temp, Mass, Noise, tofc,
+    Multiplicity, Vap, Detector Coordinates, Position and Epos ToF. The
+    columns are taken from "Position" (x, y, z in nm) and "Mass" (mc in Da),
+    the two a .pos file holds. Every other section is skipped without being
+    read, so a large file costs no more memory than its .pos would.
+
+    The layout is the one `write_apt` writes (see the notes there). It
+    matches an AP Suite 6 export, the six floats of "Position"'s header
+    included (xmin, xmax, ymin, ymax, zmin, zmax). `read_pos_to_df` calls
+    this for any file ending in `.apt`.
+
+    Raises
+    ------
+    ValueError
+        If the file is not an .apt file, is truncated, or has no
+        Position/Mass section with one float record per ion.
+    """
+
+    file_size = Path(filename).stat().st_size
+
+    with open(filename, "rb") as f:
+        header = np.fromfile(f, dtype=_APT_FILE_HEADER, count=1)
+        if len(header) == 0 or bytes(header[0]["cSignature"]) != b"APT":
+            raise ValueError(f"{filename} is not an AP Suite .apt file")
+        header = header[0]
+
+        header_size = int(header["iHeaderSize"])
+        if header_size < _APT_FILE_HEADER.itemsize:
+            raise ValueError(f"{filename} has a file header of {header_size} bytes")
+
+        n_ions = int(header["llIonCount"])
+        sections = _apt_sections(f, filename, header_size, file_size)
+        xyz = _apt_float_section(f, filename, sections, "Position", 3, n_ions)
+        mc = _apt_float_section(f, filename, sections, "Mass", 1, n_ions)
+
+    return _pos_frame(xyz, mc[:, 0])
 
 
 # ===========================================================================
