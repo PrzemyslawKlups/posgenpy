@@ -88,7 +88,7 @@ from scipy.spatial import cKDTree
 from ._progress import SweepProgress
 from .cluster import analyse_clusters
 from .corrections import find_knn_cluster_distance
-from .io import build_ion_formula_map
+from .io import atoms_per_ion, build_ion_formula_map
 from .sweep import (
     _cluster_sizes,
     _load_sweep_sizes,
@@ -428,13 +428,16 @@ def _apply_n_min(labels, n_min):
 # Per-cell result tables
 
 
-def _sizes_frame(labels, ion_code, ion_names):
+def _sizes_frame(labels, ion_code, ion_names, atoms_per_code=None):
     """Per-cluster size table for a control run - the same schema
     `cluster._summarise_sizes` writes, so `sweep._load_sweep_sizes` reads it
     unchanged.
 
-    `size` and `size_core` are equal here: with no envelope there are no bulk
-    atoms in a cluster, so every atom counted is a core-species one.
+    With no envelope there are no bulk atoms in a cluster, so every atom
+    counted is a core-species one. `size_core` counts ions, as posgen's
+    `Cluster Size(core)` does. `size` counts atoms when `atoms_per_code` (the
+    atoms in each of `ion_names`, by ion code) is given, matching the real
+    run's `analyse_clusters` size; the two differ only for molecular core ions.
     """
 
     clustered = labels != -1
@@ -447,7 +450,15 @@ def _sizes_frame(labels, ion_code, ion_names):
     n_clusters = int(label.max()) + 1
     n_ions = len(ion_names)
 
-    size = np.bincount(label, minlength=n_clusters)
+    size_core = np.bincount(label, minlength=n_clusters)
+    if atoms_per_code is None:
+        size = size_core
+    else:
+        size = np.bincount(
+            label,
+            weights=np.asarray(atoms_per_code)[ion_code[clustered]],
+            minlength=n_clusters,
+        ).round().astype(np.int64)
     per_ion = np.bincount(
         label.astype(np.int64) * n_ions + ion_code[clustered],
         minlength=n_clusters * n_ions,
@@ -457,7 +468,7 @@ def _sizes_frame(labels, ion_code, ion_names):
         {
             "cluster_id": np.arange(n_clusters, dtype=np.int64),
             "size": size,
-            "size_core": size,
+            "size_core": size_core,
         }
     )
     for slot, name in enumerate(ion_names):
@@ -541,7 +552,9 @@ def _random_dataset_job(run_index):
             continue
 
         labels = _apply_n_min(neighbourhood.labels(order, dmax), state["n_min"])
-        _sizes_frame(labels, code, state["core_ions"]).to_parquet(
+        _sizes_frame(
+            labels, code, state["core_ions"], state["atoms_per_core_ion"]
+        ).to_parquet(
             run_path, index=False
         )
 
@@ -783,6 +796,10 @@ def run_fast_grid_sweep(
         _SHARED.update(
             positions=positions,
             core_ions=core_ions,
+            atoms_per_core_ion=[
+                atoms_per_ion(build_ion_formula_map(rrng_df)).get(ion, 1)
+                for ion in core_ions
+            ],
             # one code per atom of the whole tip, not just the core ones:
             # a control dataset is a shuffle of it
             full_code=full_code,

@@ -11,7 +11,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.neighbors import KDTree
 from tqdm import tqdm
 
-from .io import assign_rrng_to_pos, build_ion_formula_map
+from .io import assign_rrng_to_pos, atoms_per_ion, build_ion_formula_map
 
 # ===========================================================================
 # Cluster Search
@@ -54,14 +54,16 @@ def _resolve_order(order, k):
     return order
 
 
-def _summarise_sizes(clustered_df, core_species):
+def _summarise_sizes(clustered_df, core_species, ion_formula_map=None):
     """Per-cluster size table for a relabelled control run.
 
     Deliberately cheaper than `analyse_clusters` - no centroids, shape or
     PCA - because random runs are only ever consumed as size distributions.
-    Records `size` (every atom), `size_core` (core+border atoms, posgen's
+    Records `size` (every atom), `size_core` (core+border ions, posgen's
     `Cluster Size(core)`) and a column per ion, so a size threshold can later
-    be applied on any of those without re-running the sweep.
+    be applied on any of those without re-running the sweep. With
+    `ion_formula_map`, `size` counts atoms (a C2 ion is two), the same as the
+    real run's `analyse_clusters` size; without it, ions.
     """
     cl = clustered_df.loc[clustered_df["cluster_id"] != -1]
 
@@ -71,10 +73,13 @@ def _summarise_sizes(clustered_df, core_species):
     counts = pd.crosstab(cl["cluster_id"], cl["ion"])
     core_cols = [c for c in counts.columns if c in set(core_species)]
 
+    n_atoms_in = atoms_per_ion(ion_formula_map) if ion_formula_map is not None else {}
+    atoms_per_column = np.array([n_atoms_in.get(c, 1) for c in counts.columns])
+
     out = pd.DataFrame(
         {
             "cluster_id": counts.index,
-            "size": counts.sum(axis=1).to_numpy(),
+            "size": (counts.to_numpy() * atoms_per_column).sum(axis=1),
             "size_core": counts[core_cols].sum(axis=1).to_numpy() if core_cols else 0,
         }
     )
@@ -462,7 +467,9 @@ def analyse_clusters(
         Maps each ion label to its {element: count} formula (see
         io.build_ion_formula_map). When given, per-cluster atom counts are
         credited per-element (e.g. an "Fe2O3"-ranged atom credits 2 to Fe and
-        3 to O) instead of one count per raw (possibly compound) ion label.
+        3 to O) instead of one count per raw (possibly compound) ion label,
+        and `size` counts atoms (a C2 ion is two) rather than ions, so it
+        equals the sum of the element columns. Without it, `size` counts ions.
 
     atomic_volume : float
         Atomic volume (nm³/atom) used to estimate
@@ -470,10 +477,11 @@ def analyse_clusters(
 
     core_species : list[str], optional
         When given, a `size_core` column counts each cluster's core-species
-        atoms (core + border). That is posgen's `Cluster Size(core)`, the
+        ions (core + border). That is posgen's `Cluster Size(core)`, the
         quantity its `sizedist.txt` reports and the one the old
         real-cluster-count graphs were filtered on - as opposed to `size`,
-        which counts every atom including the enveloped bulk.
+        which counts every atom including the enveloped bulk. It stays a count
+        of ions, the quantity run_clustering's N_min clip is applied to.
 
     Returns
     -------
@@ -503,13 +511,21 @@ def analyse_clusters(
             "cluster_density", "equivalent_spherical_radius", *species_list,
         ])
 
+    n_atoms_in = atoms_per_ion(ion_formula_map) if ion_formula_map is not None else {}
+
     results = []
 
     for cid, group in clusters.groupby("cluster_id"):
 
         coords = group[["x", "y", "z"]].to_numpy()
 
+        # n counts detected ions (points) and is what the geometry uses;
+        # n_atoms is the size, and what the volume-based quantities use
         n = len(group)
+        counts = group["ion"].value_counts()
+        n_atoms = int(sum(
+            n_ions * n_atoms_in.get(ion, 1) for ion, n_ions in counts.items()
+        ))
 
         # --------------------------
         # Centroid
@@ -537,7 +553,7 @@ def analyse_clusters(
         bbox_volume = bbox_x * bbox_y * bbox_z
 
         cluster_density = (
-            n / bbox_volume
+            n_atoms / bbox_volume
             if bbox_volume > 0
             else np.nan
         )
@@ -579,7 +595,7 @@ def analyse_clusters(
         # --------------------------
         # Equivalent spherical radius
         # --------------------------
-        cluster_volume = n * atomic_volume
+        cluster_volume = n_atoms * atomic_volume
 
         equivalent_spherical_radius = (
             (3.0 * cluster_volume / (4.0 * np.pi))
@@ -591,7 +607,7 @@ def analyse_clusters(
             "x": centre[0],
             "y": centre[1],
             "z": centre[2],
-            "size": n,
+            "size": n_atoms,
             "size_core": (
                 int(group["ion"].isin(core_species).sum())
                 if core_species is not None else n
@@ -614,8 +630,6 @@ def analyse_clusters(
         # --------------------------
         # Ion counts (credited per-element when a formula map is given)
         # --------------------------
-        counts = group["ion"].value_counts()
-
         if ion_formula_map is None:
             for ion in species_list:
                 row[ion] = counts.get(ion, 0)
@@ -746,7 +760,7 @@ def run_relabel_sweep(
             verbose=False,
         )
 
-        sizes = _summarise_sizes(clustered, core_ions)
+        sizes = _summarise_sizes(clustered, core_ions, ion_formula_map=formula_map)
         sizes.to_parquet(run_path, index=False)
 
         del shuffled_pos, labelled, clustered, sizes

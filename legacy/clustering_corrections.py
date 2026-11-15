@@ -628,7 +628,11 @@ def get_cluster_metrics(
     if excluded_Fe:
         Fe_in_clusters = cluster_stats_df_new.loc[:, 'Fe'].sum()
         clustered_volume_no_Fe = (ranged_atoms_in_clusters - Fe_in_clusters) / (detector_efficiency * atomic_density_per_nm3)
-        volume_fraction_no_Fe = (ranged_atoms_in_clusters - Fe_in_clusters) / (ranged_atoms_in_bulk + Fe_in_clusters)
+        # Fixed 2026-11-15. The clustered Fe moves to the matrix, so the total stays
+        # ranged_atoms_in_bulk. Results made before then (including the DPhil data)
+        # used `/ (ranged_atoms_in_bulk + Fe_in_clusters)`, which counted that Fe twice
+        # and reads low by Fe_in_clusters / ranged_atoms_in_bulk (0-2.1 %).
+        volume_fraction_no_Fe = (ranged_atoms_in_clusters - Fe_in_clusters) / ranged_atoms_in_bulk
 
     # tip volume
     tip_volume = ranged_atoms_in_bulk / (detector_efficiency * atomic_density_per_nm3)

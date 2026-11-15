@@ -52,7 +52,7 @@ def test_unclustered_counts_are_credited_per_element():
 
     summary = pgp.summarise_unclustered(atoms, ion_formula_map=formula_map)
 
-    assert summary["size"].iloc[0] == 3          # three atoms
+    assert summary["size"].iloc[0] == 4          # three ions, four atoms
     assert summary["C"].iloc[0] == 3             # ...crediting two carbons for C2
     assert summary["Fe"].iloc[0] == 1
 
@@ -130,6 +130,103 @@ def test_cluster_size_excludes_the_matrix_element():
 
     assert with_matrix.iloc[0] == 215
     assert without.iloc[0] == 15
+
+
+# ---------------------------------------------------------------------------
+# `size` counts atoms, on both sides of the cluster/matrix split
+# ---------------------------------------------------------------------------
+
+C2_FORMULA_MAP = {"C2": {"C": 2}, "Cu": {"Cu": 1}, "Fe": {"Fe": 1}}
+
+
+def test_cluster_size_counts_atoms_and_size_core_counts_ions():
+    """A C2 ion is two atoms of volume: `size` has to say 4 here, matching the
+    element columns. `size_core` stays posgen's ion count."""
+    atoms = make_atoms(["C2", "Cu", "Fe"], [0, 0, 0])
+
+    stats = pgp.analyse_clusters(
+        atoms, ion_formula_map=C2_FORMULA_MAP, core_species=["Cu", "C2"]
+    )
+
+    assert stats["size"].iloc[0] == 4
+    assert stats["size"].iloc[0] == stats[["C", "Cu", "Fe"]].sum(axis=1).iloc[0]
+    assert stats["size_core"].iloc[0] == 2
+
+
+def test_cluster_size_without_a_formula_map_counts_ions():
+    atoms = make_atoms(["C2", "Cu", "Fe"], [0, 0, 0])
+
+    assert pgp.analyse_clusters(atoms)["size"].iloc[0] == 3
+
+
+def test_control_run_size_counts_atoms_like_the_real_run():
+    """Real and randomised clusters are compared on `size`, so both have to
+    count the same unit."""
+    from posgenpy.cluster import _summarise_sizes
+
+    atoms = make_atoms(["C2", "Cu", "Fe", "Cu"], [0, 0, 0, -1])
+
+    sizes = _summarise_sizes(atoms, ["Cu", "C2"], ion_formula_map=C2_FORMULA_MAP)
+    real = pgp.analyse_clusters(
+        atoms, ion_formula_map=C2_FORMULA_MAP, core_species=["Cu", "C2"]
+    )
+
+    assert sizes["size"].iloc[0] == real["size"].iloc[0] == 4
+    assert sizes["size_core"].iloc[0] == real["size_core"].iloc[0] == 2
+    assert _summarise_sizes(atoms, ["Cu", "C2"])["size"].iloc[0] == 3
+
+
+def test_tip_volume_counts_every_ranged_atom():
+    """Cluster and matrix totals add up to the tip's atoms, so a molecular ion
+    in the matrix adds all of its atoms to the tip volume."""
+    atoms = make_atoms(["C2", "Cu", "Fe", "C2", "Fe", "Cu"], [0, 0, 0, -1, -1, -1])
+
+    stats = pgp.analyse_clusters(atoms, ion_formula_map=C2_FORMULA_MAP)
+    matrix = pgp.summarise_unclustered(atoms, ion_formula_map=C2_FORMULA_MAP)
+    m = pgp.get_cluster_metrics(
+        "r", "loc", "s", stats, matrix, ["Cu"], ["Fe"],
+        dmax=0.5, order=5, n_min=1,
+        detector_efficiency=0.5, atomic_density_per_nm3=10.0,
+    )
+
+    assert m["tip volume nm3"] * 0.5 * 10.0 == pytest.approx(8)    # 6 ions, 8 atoms
+    assert m["volume fraction"] == pytest.approx(4 / 8)
+
+
+# ---------------------------------------------------------------------------
+# get_cluster_metrics
+# ---------------------------------------------------------------------------
+
+
+def _metrics_100_clustered_40_fe_900_matrix():
+    """100 clustered atoms (40 of them Fe) and 900 in the matrix."""
+    clusters = pd.DataFrame(
+        {"size": [60, 40], "Fe": [20, 20], "is_edge_cluster": [False, False]}
+    )
+    matrix = pd.DataFrame({"size": [900]})
+    return pgp.get_cluster_metrics(
+        "r", "loc", "s", clusters, matrix, ["Ni"], ["Fe"],
+        dmax=0.5, order=5, n_min=10, excluded_Fe=True,
+    )
+
+
+def test_volume_fraction_no_fe_divides_by_all_ranged_atoms():
+    """Taking the clustered Fe out of the clusters hands it to the matrix; the
+    total stays at the 1000 ranged atoms. Adding it to the denominator on top
+    of that counts it twice (60 / 1040)."""
+    m = _metrics_100_clustered_40_fe_900_matrix()
+
+    assert m["volume fraction no Fe"] == pytest.approx(0.06)
+    assert m["volume fraction"] == pytest.approx(0.10)
+
+
+def test_no_fe_fraction_matches_no_fe_volume_over_tip_volume():
+    """The function's own outputs have to agree with each other."""
+    m = _metrics_100_clustered_40_fe_900_matrix()
+
+    assert m["volume fraction no Fe"] == pytest.approx(
+        m["clustered volume no Fe nm3"] / m["tip volume nm3"]
+    )
 
 
 # ---------------------------------------------------------------------------

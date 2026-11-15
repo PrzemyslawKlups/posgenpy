@@ -22,6 +22,7 @@ import posgenpy as pgp
 from posgenpy.fast_sweep import (
     CoreNeighbourhood,
     _apply_n_min,
+    _sizes_frame,
     _sorted_sizes,
     core_code_from_mc,
     extract_core_atoms,
@@ -483,6 +484,19 @@ def test_n_min_drops_small_clusters(neighbourhood):
     # labels stay a dense 0..n-1 range after the clip
     surviving = clipped[clipped != -1]
     assert set(np.unique(surviving)) == set(range(len(np.unique(surviving))))
+
+
+def test_control_run_size_counts_atoms_and_size_core_counts_ions():
+    """A molecular core ion (P2 here) is two atoms in `size`, as in the real
+    run's analyse_clusters table, and one ion in `size_core`."""
+    labels = np.array([0, 0, 1, -1])
+    ion_code = np.array([0, 1, 1, 0])
+
+    sizes = _sizes_frame(labels, ion_code, ["Cu", "P2"], atoms_per_code=[1, 2])
+
+    assert sizes["size"].tolist() == [3, 2]
+    assert sizes["size_core"].tolist() == [2, 1]
+    assert _sizes_frame(labels, ion_code, ["Cu", "P2"])["size"].tolist() == [2, 1]
 
 
 def test_no_core_species_gives_empty_clusters():

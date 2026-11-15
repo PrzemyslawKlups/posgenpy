@@ -535,6 +535,16 @@ def build_ion_formula_map(rrng_df):
     return formula_map
 
 
+def atoms_per_ion(ion_formula_map):
+    """Map each ion label to the number of atoms it contains, e.g.
+    {"C2": 2, "Fe": 1}, from a build_ion_formula_map result.
+
+    This is what turns an ion count into an atom count: a detected C2 ion is
+    two atoms of tip volume. Labels missing from the map count as one atom.
+    """
+    return {ion: sum(formula.values()) for ion, formula in ion_formula_map.items()}
+
+
 def get_ion_colours_from_rrng(rrng_df):
     """Map each unique ion label to its IVAS hex colour, e.g. {"Fe": "#FF0000"}."""
 

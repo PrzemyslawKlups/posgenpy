@@ -134,9 +134,15 @@ easy to get wrong when comparing graphs:
 
 | `size_metric` | counts | matches |
 |---|---|---|
-| `"core"` (default) | core+border atoms | posgen's `sizedist.txt` / the old graphs |
+| `"core"` (default) | core+border ions | posgen's `sizedist.txt` / the old graphs |
 | `"total"` | every atom, incl. enveloped bulk | nothing in the old workflow |
 | `"total_excluding"` + `exclude_ions=["Fe"]` | all ions minus those listed | the old `optimise_n_min` |
+
+`size` counts atoms: a molecular ion such as C2 is two, so `size` equals the
+sum of the per-element columns and is the same unit `get_cluster_metrics`
+divides by the atomic density. `size_core` counts ions, as posgen does. The two
+only differ when a cluster or the matrix holds molecular ions. Size tables
+written before November 2026 counted ions in `size` too.
 
 Thresholding `"total"` keeps far more clusters at every n_min and the gap grows
 with n_min (on `MNSP tip C` at order 7: 168 clusters vs posgen's 136 at

@@ -15,6 +15,8 @@ import alphashape
 from scipy.spatial import ConvexHull, Delaunay, cKDTree
 from tqdm import tqdm
 
+from .io import atoms_per_ion
+
 
 def calculate_cluster_size(stats_df: pd.DataFrame, core_ions: list, bulk_ions: list,
                             elements_to_exclude: list) -> pd.Series:
@@ -162,10 +164,13 @@ def summarise_unclustered(
     get_cluster_metrics' matrix atom count.
 
     `size` is that count. With `ion_formula_map` (see io.build_ion_formula_map)
-    a column per element is added too, credited per-element exactly as
-    `analyse_clusters` does - which is what the matrix composition is read off,
-    and what lets `deconvolute_Fm_clusters` be applied to the matrix as well as
-    to the clusters. Without it, the columns are the raw ion labels.
+    it counts atoms rather than ions (a C2 ion is two), the same unit as
+    `analyse_clusters`' size, and a column per element is added, credited
+    per-element exactly as `analyse_clusters` does - which is what the matrix
+    composition is read off, and what lets `deconvolute_Fm_clusters` be applied
+    to the matrix as well as to the clusters. `size` is then the sum of those
+    columns. Without the map, `size` counts ions and the columns are the raw
+    ion labels.
     """
 
     unclustered = clustered_atoms_df.loc[clustered_atoms_df["cluster_id"] == -1]
@@ -180,6 +185,11 @@ def summarise_unclustered(
         for ion, n_ions in counts.items():
             summary[ion] = n_ions
         return summary
+
+    n_atoms_in = atoms_per_ion(ion_formula_map)
+    summary["size"] = int(sum(
+        n_ions * n_atoms_in.get(ion, 1) for ion, n_ions in counts.items()
+    ))
 
     element_counts = {}
     for ion, n_ions in counts.items():
@@ -448,6 +458,15 @@ def get_cluster_metrics(
     """
     One-row summary of cluster analysis metrics (volume fraction, number
     density, etc.), considering edge clusters as half-counted.
+
+    With `excluded_Fe`, two more entries are added:
+
+    - "clustered volume no Fe nm3": the clustered atoms less the Fe in the
+      clusters, converted to a volume like "clustered volume nm3".
+    - "volume fraction no Fe": (clustered atoms - Fe in clusters) / all ranged
+      atoms, i.e. "clustered volume no Fe nm3" / "tip volume nm3". The clustered
+      Fe counts as matrix, so the denominator is the same total that
+      "volume fraction" uses.
     """
 
     ranged_atoms_in_matrix = unclustered_stats_df["size"].sum()
@@ -465,9 +484,11 @@ def get_cluster_metrics(
             (ranged_atoms_in_clusters - Fe_in_clusters)
             / (detector_efficiency * atomic_density_per_nm3)
         )
-        denom = ranged_atoms_in_bulk + Fe_in_clusters
+        # The clustered Fe moves to the matrix, so the total stays
+        # ranged_atoms_in_bulk; it is not added again.
         volume_fraction_no_Fe = (
-            (ranged_atoms_in_clusters - Fe_in_clusters) / denom if denom else np.nan
+            (ranged_atoms_in_clusters - Fe_in_clusters) / ranged_atoms_in_bulk
+            if ranged_atoms_in_bulk else np.nan
         )
 
     tip_volume = ranged_atoms_in_bulk / (detector_efficiency * atomic_density_per_nm3)
