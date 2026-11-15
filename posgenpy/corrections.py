@@ -448,6 +448,15 @@ def get_cluster_metrics(
     """
     One-row summary of cluster analysis metrics (volume fraction, number
     density, etc.), considering edge clusters as half-counted.
+
+    With `excluded_Fe`, two more entries are added:
+
+    - "clustered volume no Fe nm3": the clustered atoms less the Fe in the
+      clusters, converted to a volume like "clustered volume nm3".
+    - "volume fraction no Fe": (clustered atoms - Fe in clusters) / all ranged
+      atoms, i.e. "clustered volume no Fe nm3" / "tip volume nm3". The clustered
+      Fe counts as matrix, so the denominator is the same total that
+      "volume fraction" uses.
     """
 
     ranged_atoms_in_matrix = unclustered_stats_df["size"].sum()
@@ -465,9 +474,11 @@ def get_cluster_metrics(
             (ranged_atoms_in_clusters - Fe_in_clusters)
             / (detector_efficiency * atomic_density_per_nm3)
         )
-        denom = ranged_atoms_in_bulk + Fe_in_clusters
+        # The clustered Fe moves to the matrix, so the total stays
+        # ranged_atoms_in_bulk; it is not added again.
         volume_fraction_no_Fe = (
-            (ranged_atoms_in_clusters - Fe_in_clusters) / denom if denom else np.nan
+            (ranged_atoms_in_clusters - Fe_in_clusters) / ranged_atoms_in_bulk
+            if ranged_atoms_in_bulk else np.nan
         )
 
     tip_volume = ranged_atoms_in_bulk / (detector_efficiency * atomic_density_per_nm3)

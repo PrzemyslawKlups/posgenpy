@@ -133,6 +133,42 @@ def test_cluster_size_excludes_the_matrix_element():
 
 
 # ---------------------------------------------------------------------------
+# get_cluster_metrics
+# ---------------------------------------------------------------------------
+
+
+def _metrics_100_clustered_40_fe_900_matrix():
+    """100 clustered atoms (40 of them Fe) and 900 in the matrix."""
+    clusters = pd.DataFrame(
+        {"size": [60, 40], "Fe": [20, 20], "is_edge_cluster": [False, False]}
+    )
+    matrix = pd.DataFrame({"size": [900]})
+    return pgp.get_cluster_metrics(
+        "r", "loc", "s", clusters, matrix, ["Ni"], ["Fe"],
+        dmax=0.5, order=5, n_min=10, excluded_Fe=True,
+    )
+
+
+def test_volume_fraction_no_fe_divides_by_all_ranged_atoms():
+    """Taking the clustered Fe out of the clusters hands it to the matrix; the
+    total stays at the 1000 ranged atoms. Adding it to the denominator on top
+    of that counts it twice (60 / 1040)."""
+    m = _metrics_100_clustered_40_fe_900_matrix()
+
+    assert m["volume fraction no Fe"] == pytest.approx(0.06)
+    assert m["volume fraction"] == pytest.approx(0.10)
+
+
+def test_no_fe_fraction_matches_no_fe_volume_over_tip_volume():
+    """The function's own outputs have to agree with each other."""
+    m = _metrics_100_clustered_40_fe_900_matrix()
+
+    assert m["volume fraction no Fe"] == pytest.approx(
+        m["clustered volume no Fe nm3"] / m["tip volume nm3"]
+    )
+
+
+# ---------------------------------------------------------------------------
 # The pipeline as the final run assembles it
 # ---------------------------------------------------------------------------
 
